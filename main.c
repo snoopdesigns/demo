@@ -1,6 +1,6 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
-#include "include/glut.h"
+#include "GL/glut.h"
 
 void display(void)
 {
