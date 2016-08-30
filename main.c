@@ -1,4 +1,5 @@
 // http://antongerdelan.net/opengl/glcontext2.html
+// http://learnopengl.com/#!Getting-started/Hello-Triangle
 // Include standard headers
 #include <stdio.h>
 #include <stdlib.h>
