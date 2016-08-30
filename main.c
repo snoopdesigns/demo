@@ -1,5 +1,7 @@
 // http://antongerdelan.net/opengl/glcontext2.html
 // http://learnopengl.com/#!Getting-started/Hello-Triangle
+// https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Introduction
+// gcc main.c -o main -lGL -lglut -lglfw -lGLEW
 // Include standard headers
 #include <stdio.h>
 #include <stdlib.h>
