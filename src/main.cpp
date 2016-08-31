@@ -18,6 +18,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 // Include GL headers
 #include <GL/gl.h>
@@ -26,6 +27,7 @@ GLuint program;
 GLuint vbo_triangle;
 GLint attribute_coord3d;
 GLint uniform_fade;
+GLint uniform_m_transform;
 
 int init_resources(void) {
 
@@ -69,6 +71,13 @@ int init_resources(void) {
 		return 0;
 	}
 	glUniform1f(uniform_fade, 0.1);
+	
+	uniform_name = "m_transform";
+    uniform_m_transform = glGetUniformLocation(program, uniform_name);
+    if (uniform_m_transform == -1) {
+        gl_log("Could not bind uniform %s", uniform_name);
+        return 0;
+    }
   return 1;
 }
 
@@ -104,6 +113,14 @@ void logic() {
 	float cur_fade = sinf(clock() / 1000.0 * (2*3.14) / 5) / 2 + 0.5;
 	glUseProgram(program);
 	glUniform1f(uniform_fade, cur_fade);
+	
+	// Moving and rotating
+	float move = sinf(clock() / 1000.0 * (2*3.14) / 5); // -1<->+1 every 5 seconds
+	float angle = clock() / 1000.0 * 45;  // 45° per second
+	glm::vec3 axis_z(0, 0, 1);
+	glm::mat4 m_transform = glm::translate(glm::mat4(1.0f), glm::vec3(move, 0.0, 0.0))
+		* glm::rotate(glm::mat4(1.0f), glm::radians(angle), axis_z);
+	glUniformMatrix4fv(uniform_m_transform, 1, GL_FALSE, glm::value_ptr(m_transform));
 }
 
 void mainLoop(GLFWwindow* window) {
