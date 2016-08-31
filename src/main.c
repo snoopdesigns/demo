@@ -1,66 +1,23 @@
 // http://antongerdelan.net/opengl/glcontext2.html
 // http://learnopengl.com/#!Getting-started/Hello-Triangle
 // https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Introduction
-// gcc main.c -o main -lGL -lglut -lglfw -lGLEW
+// LINUX: gcc main.c -o main -lGL -lglut -lglfw -lGLEW
+// WIN: gcc -Wall -o main -L/cygdrive/c/PROJECTS/demo/lib main.c -lopengl32 -lglfw3 -lfreeglut -lglew32
+
 // Include standard headers
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <stdarg.h>
 
-#define GLEW_NO_GLU 1
-//#define GLFW_INCLUDE_GLCOREARB
+#include "include/log.h"
+#include "include/gfx.h"
+
 // Include GL headers
-#include <GL/glew.h>
-
 #include <GL/gl.h>
-#include <GLFW/glfw3.h>
-
-#include "log.c"
 
 GLuint program;
 GLint attribute_coord2d;
-
-void glfw_error_callback(int error, const char* description) {
-    gl_log_err("GLFW ERROR: code %i msg: %s\n", error, description);
-}
-	
-GLFWwindow* initializeWindow(void) {
-    if (!restart_gl_log()) {
-	    fprintf(stderr, "Failed to restart GLFW log\n");
-		return NULL;
-	}
-	gl_log("Starting GLFW...\n");
-	gl_log("GLFW version: %s\n", glfwGetVersionString());
-	glfwSetErrorCallback(glfw_error_callback);
-	if(!glfwInit())
-	{
-		fprintf(stderr, "Failed to initialize GLFW\n");
-		return NULL;
-	}
-	glfwWindowHint(GLFW_SAMPLES, 4);
-	//glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	//glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-	//glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-	//glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-	GLFWmonitor* mon = glfwGetPrimaryMonitor();
-	const GLFWvidmode* vmode = glfwGetVideoMode(mon);
-	gl_log("width=%d\n", vmode->width);
-	gl_log("height=%d\n", vmode->height);
-	//window = glfwCreateWindow (vmode->width, vmode->height, "My first demo", mon, NULL);
-	GLFWwindow* window = glfwCreateWindow (640, 480, "My first demo", NULL, NULL);
-	glfwMakeContextCurrent(window);
-	glewExperimental = GL_TRUE;
-	if (glewInit() != GLEW_OK) {
-		fprintf(stderr, "Failed to initialize GLEW\n");
-		return NULL;
-	}
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
-	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
-	return window;
-}
 
 int init_resources(void) {
     GLint compile_ok = GL_FALSE, link_ok = GL_FALSE;
@@ -83,9 +40,9 @@ int init_resources(void) {
 	const char *fs_source =
 		"#version 120\n"  // OpenGL 2.1
 		"void main(void) {        "
-		"  gl_FragColor[0] = 0.0; "
-		"  gl_FragColor[1] = 0.0; "
-		"  gl_FragColor[2] = 1.0; "
+		"  gl_FragColor[0] = gl_FragCoord.x/640.0; "
+		"  gl_FragColor[1] = gl_FragCoord.y/480.0; "
+		"  gl_FragColor[2] = 0.5; "
 		"}";
 	glShaderSource(fs, 1, &fs_source, NULL);
 	glCompileShader(fs);
@@ -135,7 +92,6 @@ void render(GLFWwindow* window) {
 	
 	/* Push each element in buffer_vertices to the vertex shader */
 	glDrawArrays(GL_TRIANGLES, 0, 3);
-	
 	glDisableVertexAttribArray(attribute_coord2d);
 }
 

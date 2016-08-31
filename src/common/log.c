@@ -1,3 +1,5 @@
+#include "../include/log.h"
+
 #define GL_LOG_FILE "gl.log"
 
 int restart_gl_log() {

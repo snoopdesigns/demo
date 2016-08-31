@@ -1,0 +1,5 @@
+# Ignored files
+*.o
+*.exe
+run_main*
+*.log
