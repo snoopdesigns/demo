@@ -12,6 +12,8 @@
 
 #include "include/log.h"
 #include "include/gfx.h"
+#include "include/utils.h"
+#include "include/shader.h"
 
 // Include GL headers
 #include <GL/gl.h>
@@ -20,37 +22,10 @@ GLuint program;
 GLint attribute_coord2d;
 
 int init_resources(void) {
-    GLint compile_ok = GL_FALSE, link_ok = GL_FALSE;
-	GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-	const char *vs_source =
-		"#version 120\n"  // OpenGL 2.1
-		"attribute vec2 coord2d;                  "
-		"void main(void) {                        "
-		"  gl_Position = vec4(coord2d, 0.0, 1.0); "
-		"}";
-	glShaderSource(vs, 1, &vs_source, NULL);
-	glCompileShader(vs);
-	glGetShaderiv(vs, GL_COMPILE_STATUS, &compile_ok);
-	if (!compile_ok) {
-		gl_log("Error in vertex shader");
-		return 0;
-	}
-	
-	GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-	const char *fs_source =
-		"#version 120\n"  // OpenGL 2.1
-		"void main(void) {        "
-		"  gl_FragColor[0] = gl_FragCoord.x/640.0; "
-		"  gl_FragColor[1] = gl_FragCoord.y/480.0; "
-		"  gl_FragColor[2] = 0.5; "
-		"}";
-	glShaderSource(fs, 1, &fs_source, NULL);
-	glCompileShader(fs);
-	glGetShaderiv(fs, GL_COMPILE_STATUS, &compile_ok);
-	if (!compile_ok) {
-		gl_log("Error in fragment shader");
-		return 0;
-	}
+    GLuint vs, fs;
+	GLint link_ok = GL_FALSE;
+	if ((vs = create_shader("assets/triangle.v.glsl", GL_VERTEX_SHADER))   == 0) return 0;
+	if ((fs = create_shader("assets/triangle.f.glsl", GL_FRAGMENT_SHADER)) == 0) return 0;
 	program = glCreateProgram();
 	glAttachShader(program, vs);
 	glAttachShader(program, fs);
@@ -58,6 +33,7 @@ int init_resources(void) {
 	glGetProgramiv(program, GL_LINK_STATUS, &link_ok);
 	if (!link_ok) {
 		gl_log("Error in glLinkProgram");
+		print_shader_error_log(program);
 		return 0;
 	}
 	const char* attribute_name = "coord2d";
