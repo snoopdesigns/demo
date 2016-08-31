@@ -24,23 +24,30 @@
 #include <GL/gl.h>
 
 GLuint program;
-GLuint vbo_triangle;
+GLuint vbo_cube;
+GLuint ibo_cube_elements;
 GLint attribute_coord3d;
-GLint uniform_fade;
-GLint uniform_m_transform;
+GLint uniform_mvp;
 
 int init_resources(void) {
 
 	// Creating VBO to store vertices to graphic card
-	GLfloat triangle_vertices[] = {
-	    0.0,  0.8, 0.0,
-	   -0.8, -0.8, 0.0,
-	    0.8, -0.8, 0.0,
-	};
-	glGenBuffers(1, &vbo_triangle);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo_triangle);
+	GLfloat cube_vertices[] = {
+		// front
+		-1.0, -1.0,  1.0,
+		 1.0, -1.0,  1.0,
+		 1.0,  1.0,  1.0,
+		-1.0,  1.0,  1.0,
+		// back
+		-1.0, -1.0, -1.0,
+		 1.0, -1.0, -1.0,
+		 1.0,  1.0, -1.0,
+		-1.0,  1.0, -1.0,
+    };
+	glGenBuffers(1, &vbo_cube);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_cube);
 	// Store vertices in memory
-	glBufferData(GL_ARRAY_BUFFER, sizeof(triangle_vertices), triangle_vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), cube_vertices, GL_STATIC_DRAW);
 
     GLuint vs, fs;
 	GLint link_ok = GL_FALSE;
@@ -64,35 +71,51 @@ int init_resources(void) {
 	}
 	
 	const char* uniform_name;
-	uniform_name = "fade";
-	uniform_fade = glGetUniformLocation(program, uniform_name);
-	if (uniform_fade == -1) {
-		gl_log("Could not bind uniform_fade %s", uniform_name);
-		return 0;
-	}
-	glUniform1f(uniform_fade, 0.1);
-	
-	uniform_name = "m_transform";
-    uniform_m_transform = glGetUniformLocation(program, uniform_name);
-    if (uniform_m_transform == -1) {
+    uniform_name = "mvp";
+    uniform_mvp = glGetUniformLocation(program, uniform_name);
+    if (uniform_mvp == -1) {
         gl_log("Could not bind uniform %s", uniform_name);
         return 0;
     }
+	
+	GLushort cube_elements[] = {
+		// front
+		0, 1, 2,
+		2, 3, 0,
+		// top
+		1, 5, 6,
+		6, 2, 1,
+		// back
+		7, 6, 5,
+		5, 4, 7,
+		// bottom
+		4, 0, 3,
+		3, 7, 4,
+		// left
+		4, 5, 1,
+		1, 0, 4,
+		// right
+		3, 2, 6,
+		6, 7, 3,
+	};
+	glGenBuffers(1, &ibo_cube_elements);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_cube_elements);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_elements), cube_elements, GL_STATIC_DRAW);
   return 1;
 }
 
 void render(GLFWwindow* window) {
 	glClearColor(1.0, 1.0, 1.0, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
 	glUseProgram(program);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo_triangle);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_cube);
 	glEnableVertexAttribArray(attribute_coord3d);
 	
 	/* Describe our vertices array to OpenGL (it can't guess its format automatically) */
 	glVertexAttribPointer(
 		attribute_coord3d, // attribute
-		3,                 // number of elements per vertex, here (x,y)
+		3,                 // number of elements per vertex, here (x,y,z)
 		GL_FLOAT,          // the type of each element
 		GL_FALSE,          // take our values as-is
 		0,                 // no extra data between each position
@@ -100,27 +123,31 @@ void render(GLFWwindow* window) {
 	);
 	
 	/* Push each element in buffer_vertices to the vertex shader */
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_cube_elements);
+	int size;  
+	glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
+	glDrawElements(GL_LINE_LOOP, size/sizeof(GLushort), GL_UNSIGNED_SHORT, 0);
 	glDisableVertexAttribArray(attribute_coord3d);
 }
 
 void free_resources() {
   glDeleteProgram(program);
-  glDeleteBuffers(1, &vbo_triangle);
+  glDeleteBuffers(1, &vbo_cube);
 }
 
 void logic() {
-	float cur_fade = sinf(clock() / 1000.0 * (2*3.14) / 5) / 2 + 0.5;
-	glUseProgram(program);
-	glUniform1f(uniform_fade, cur_fade);
-	
-	// Moving and rotating
-	float move = sinf(clock() / 1000.0 * (2*3.14) / 5); // -1<->+1 every 5 seconds
 	float angle = clock() / 1000.0 * 45;  // 45° per second
-	glm::vec3 axis_z(0, 0, 1);
-	glm::mat4 m_transform = glm::translate(glm::mat4(1.0f), glm::vec3(move, 0.0, 0.0))
-		* glm::rotate(glm::mat4(1.0f), glm::radians(angle), axis_z);
-	glUniformMatrix4fv(uniform_m_transform, 1, GL_FALSE, glm::value_ptr(m_transform));
+	int screen_width = 640;
+	int screen_height = 480;
+    glm::vec3 axis_y(0, 1, 0);
+    glm::mat4 anim = glm::rotate(glm::mat4(1.0f), glm::radians(angle), axis_y);
+
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0, 0.0, -4.0));
+    glm::mat4 view = glm::lookAt(glm::vec3(0.0, 2.0, 0.0), glm::vec3(0.0, 0.0, -4.0), glm::vec3(0.0, 1.0, 0.0));
+    glm::mat4 projection = glm::perspective(45.0f, 1.0f*screen_width/screen_height, 0.1f, 10.0f);
+
+    glm::mat4 mvp = projection * view * model * anim;
+    glUniformMatrix4fv(uniform_mvp, 1, GL_FALSE, glm::value_ptr(mvp));
 }
 
 void mainLoop(GLFWwindow* window) {

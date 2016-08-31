@@ -36,7 +36,7 @@ GLFWwindow* initializeWindow(void) {
 		return NULL;
 	}
 	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
+	//glDepthFunc(GL_LESS);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
