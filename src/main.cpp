@@ -3,6 +3,7 @@
 // https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Introduction
 // LINUX: gcc main.c -o main -lGL -lglut -lglfw -lGLEW
 // WIN: gcc -Wall -o main -L/cygdrive/c/PROJECTS/demo/lib main.c -lopengl32 -lglfw3 -lfreeglut -lglew32
+// NOISE TUTORIAL: http://www.mbsoftworks.sk/index.php?page=tutorials&series=1&tutorial=24
 
 // Include standard headers
 #include <stdio.h>

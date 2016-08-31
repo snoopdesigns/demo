@@ -28,7 +28,7 @@ GLFWwindow* initializeWindow(void) {
 	gl_log("width=%d\n", vmode->width);
 	gl_log("height=%d\n", vmode->height);
 	//window = glfwCreateWindow (vmode->width, vmode->height, "My first demo", mon, NULL);
-	GLFWwindow* window = glfwCreateWindow (640, 480, "My first demo", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow (800, 600, "My first demo", NULL, NULL);
 	glfwMakeContextCurrent(window);
 	glewExperimental = GL_TRUE;
 	if (glewInit() != GLEW_OK) {
