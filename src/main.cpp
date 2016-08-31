@@ -16,6 +16,7 @@
 #include "include/utils.h"
 #include "include/shader.h"
 
+//#define GLM_FORCE_RADIANS // remove compile warnings
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
