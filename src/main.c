@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 #include <stdarg.h>
 
 #include "include/log.h"
@@ -21,6 +22,7 @@
 GLuint program;
 GLuint vbo_triangle;
 GLint attribute_coord2d;
+GLint uniform_fade;
 
 int init_resources(void) {
 
@@ -55,6 +57,15 @@ int init_resources(void) {
 		gl_log("Could not bind attribute %s", attribute_name);
 		return 0;
 	}
+	
+	const char* uniform_name;
+	uniform_name = "fade";
+	uniform_fade = glGetUniformLocation(program, uniform_name);
+	if (uniform_fade == -1) {
+		gl_log("Could not bind uniform_fade %s", uniform_name);
+		return 0;
+	}
+	glUniform1f(uniform_fade, 0.1);
   return 1;
 }
 
@@ -86,9 +97,16 @@ void free_resources() {
   glDeleteBuffers(1, &vbo_triangle);
 }
 
+void logic() {
+	float cur_fade = sinf(clock() / 1000.0 * (2*3.14) / 5) / 2 + 0.5;
+	glUseProgram(program);
+	glUniform1f(uniform_fade, cur_fade);
+}
+
 void mainLoop(GLFWwindow* window) {
 	do {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		logic();
 		render(window);
 		glfwPollEvents();
 		glfwSwapBuffers(window);
