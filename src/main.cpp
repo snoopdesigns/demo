@@ -22,85 +22,72 @@
 
 // Include GL headers
 #include <GL/gl.h>
+#define N 128
 
 GLuint program;
-GLuint vbo_cube;
-GLuint ibo_cube_elements;
-GLint attribute_coord3d;
+GLint attribute_coord2d;
+GLuint texture_id;
 GLint uniform_mvp;
+
+GLuint vbo[2];
+
+float offset_x = 0.0;
+float offset_y = 0.0;
+float scale = 1.0;
+
+bool interpolate = false;
+bool clamp = false;
+bool rotate = true;
 
 int init_resources(void) {
 
-	// Creating VBO to store vertices to graphic card
-	GLfloat cube_vertices[] = {
-		// front
-		-1.0, -1.0,  1.0,
-		 1.0, -1.0,  1.0,
-		 1.0,  1.0,  1.0,
-		-1.0,  1.0,  1.0,
-		// back
-		-1.0, -1.0, -1.0,
-		 1.0, -1.0, -1.0,
-		 1.0,  1.0, -1.0,
-		-1.0,  1.0, -1.0,
-    };
-	glGenBuffers(1, &vbo_cube);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo_cube);
-	// Store vertices in memory
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), cube_vertices, GL_STATIC_DRAW);
+	program = create_program("assets/triangle.v.glsl", "assets/triangle.f.glsl");
+	if (program == 0)
+		return 0;
 
-    GLuint vs, fs;
-	GLint link_ok = GL_FALSE;
-	if ((vs = create_shader("assets/triangle.v.glsl", GL_VERTEX_SHADER))   == 0) return 0;
-	if ((fs = create_shader("assets/triangle.f.glsl", GL_FRAGMENT_SHADER)) == 0) return 0;
-	program = glCreateProgram();
-	glAttachShader(program, vs);
-	glAttachShader(program, fs);
-	glLinkProgram(program);
-	glGetProgramiv(program, GL_LINK_STATUS, &link_ok);
-	if (!link_ok) {
-		gl_log("Error in glLinkProgram");
-		print_shader_error_log(program);
+	attribute_coord2d = get_attrib(program, "coord2d");
+	uniform_mvp = get_uniform(program, "mvp");
+
+	if (attribute_coord2d == -1 || uniform_mvp == -1)
 		return 0;
+
+    // Create two vertex buffer objects
+	glGenBuffers(2, vbo);
+
+	// Create an array for 101 * 101 vertices
+	glm::vec2 vertices[101][101];
+
+	for (int i = 0; i < 101; i++) {
+		for (int j = 0; j < 101; j++) {
+			vertices[i][j].x = (j - 50) / 50.0;
+			vertices[i][j].y = (i - 50) / 50.0;
+		}
 	}
-	const char* attribute_name = "coord3d";
-	attribute_coord3d = glGetAttribLocation(program, attribute_name);
-	if (attribute_coord3d == -1) {
-		gl_log("Could not bind attribute %s", attribute_name);
-		return 0;
+
+	// Tell OpenGL to copy our array to the buffer objects
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof vertices, vertices, GL_STATIC_DRAW);
+	
+	// Create an array of indices into the vertex array that traces both horizontal and vertical lines
+	GLushort indices[100 * 101 * 4];
+	int i = 0;
+
+	for (int y = 0; y < 101; y++) {
+		for (int x = 0; x < 100; x++) {
+			indices[i++] = y * 101 + x;
+			indices[i++] = y * 101 + x + 1;
+		}
 	}
-	
-	const char* uniform_name;
-    uniform_name = "mvp";
-    uniform_mvp = glGetUniformLocation(program, uniform_name);
-    if (uniform_mvp == -1) {
-        gl_log("Could not bind uniform %s", uniform_name);
-        return 0;
-    }
-	
-	GLushort cube_elements[] = {
-		// front
-		0, 1, 2,
-		2, 3, 0,
-		// top
-		1, 5, 6,
-		6, 2, 1,
-		// back
-		7, 6, 5,
-		5, 4, 7,
-		// bottom
-		4, 0, 3,
-		3, 7, 4,
-		// left
-		4, 5, 1,
-		1, 0, 4,
-		// right
-		3, 2, 6,
-		6, 7, 3,
-	};
-	glGenBuffers(1, &ibo_cube_elements);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_cube_elements);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_elements), cube_elements, GL_STATIC_DRAW);
+
+	for (int x = 0; x < 101; x++) {
+		for (int y = 0; y < 100; y++) {
+			indices[i++] = y * 101 + x;
+			indices[i++] = (y + 1) * 101 + x;
+		}
+	}
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[1]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof indices, indices, GL_STATIC_DRAW);
   return 1;
 }
 
@@ -109,45 +96,44 @@ void render(GLFWwindow* window) {
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
 	glUseProgram(program);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo_cube);
-	glEnableVertexAttribArray(attribute_coord3d);
 	
-	/* Describe our vertices array to OpenGL (it can't guess its format automatically) */
-	glVertexAttribPointer(
-		attribute_coord3d, // attribute
-		3,                 // number of elements per vertex, here (x,y,z)
-		GL_FLOAT,          // the type of each element
-		GL_FALSE,          // take our values as-is
-		0,                 // no extra data between each position
-		0                  // offset of the first element
-	);
+	glm::mat4 model;
+	if (rotate)
+		model = glm::rotate(glm::mat4(1.0f), glm::radians(clock() / 100.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+	else
+		model = glm::mat4(1.0f);
+
+	glm::mat4 view = glm::lookAt(glm::vec3(0.0, -2.0, 2.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 0.0, 1.0));
+	glm::mat4 projection = glm::perspective(45.0f, 1.0f * 640 / 480, 0.1f, 10.0f);
+
+	glm::mat4 mvp_transform = projection * view * model;
+
+	glUniformMatrix4fv(uniform_mvp, 1, GL_FALSE, glm::value_ptr(mvp_transform));
 	
-	/* Push each element in buffer_vertices to the vertex shader */
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_cube_elements);
-	int size;  
-	glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
-	glDrawElements(GL_LINE_LOOP, size/sizeof(GLushort), GL_UNSIGNED_SHORT, 0);
-	glDisableVertexAttribArray(attribute_coord3d);
+	/* Draw the grid using the indices to our vertices using our vertex buffer objects */
+	glEnableVertexAttribArray(attribute_coord2d);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+	glVertexAttribPointer(attribute_coord2d, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[1]);
+	glDrawElements(GL_LINES, 100 * 101 * 4, GL_UNSIGNED_SHORT, 0);
+
+	/* Stop using the vertex buffer object */
+	glDisableVertexAttribArray(attribute_coord2d);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 void free_resources() {
   glDeleteProgram(program);
-  glDeleteBuffers(1, &vbo_cube);
+  glDeleteBuffers(1, &vbo[0]);
+  glDeleteBuffers(1, &vbo[1]);
 }
 
 void logic() {
-	float angle = clock() / 1000.0 * 45;  // 45° per second
-	int screen_width = 640;
-	int screen_height = 480;
-    glm::vec3 axis_y(0, 1, 0);
-    glm::mat4 anim = glm::rotate(glm::mat4(1.0f), glm::radians(angle), axis_y);
-
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0, 0.0, -4.0));
-    glm::mat4 view = glm::lookAt(glm::vec3(0.0, 2.0, 0.0), glm::vec3(0.0, 0.0, -4.0), glm::vec3(0.0, 1.0, 0.0));
-    glm::mat4 projection = glm::perspective(45.0f, 1.0f*screen_width/screen_height, 0.1f, 10.0f);
-
-    glm::mat4 mvp = projection * view * model * anim;
-    glUniformMatrix4fv(uniform_mvp, 1, GL_FALSE, glm::value_ptr(mvp));
+	float angle = clock();
 }
 
 void mainLoop(GLFWwindow* window) {
