@@ -16,21 +16,24 @@
 #include "include/utils.h"
 #include "include/shader.h"
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 // Include GL headers
 #include <GL/gl.h>
 
 GLuint program;
 GLuint vbo_triangle;
-GLint attribute_coord2d;
+GLint attribute_coord3d;
 GLint uniform_fade;
 
 int init_resources(void) {
 
 	// Creating VBO to store vertices to graphic card
 	GLfloat triangle_vertices[] = {
-	    0.0,  0.8,
-	   -0.8, -0.8,
-	    0.8, -0.8,
+	    0.0,  0.8, 0.0,
+	   -0.8, -0.8, 0.0,
+	    0.8, -0.8, 0.0,
 	};
 	glGenBuffers(1, &vbo_triangle);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo_triangle);
@@ -51,9 +54,9 @@ int init_resources(void) {
 		print_shader_error_log(program);
 		return 0;
 	}
-	const char* attribute_name = "coord2d";
-	attribute_coord2d = glGetAttribLocation(program, attribute_name);
-	if (attribute_coord2d == -1) {
+	const char* attribute_name = "coord3d";
+	attribute_coord3d = glGetAttribLocation(program, attribute_name);
+	if (attribute_coord3d == -1) {
 		gl_log("Could not bind attribute %s", attribute_name);
 		return 0;
 	}
@@ -75,12 +78,12 @@ void render(GLFWwindow* window) {
 
 	glUseProgram(program);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo_triangle);
-	glEnableVertexAttribArray(attribute_coord2d);
+	glEnableVertexAttribArray(attribute_coord3d);
 	
 	/* Describe our vertices array to OpenGL (it can't guess its format automatically) */
 	glVertexAttribPointer(
-		attribute_coord2d, // attribute
-		2,                 // number of elements per vertex, here (x,y)
+		attribute_coord3d, // attribute
+		3,                 // number of elements per vertex, here (x,y)
 		GL_FLOAT,          // the type of each element
 		GL_FALSE,          // take our values as-is
 		0,                 // no extra data between each position
@@ -89,7 +92,7 @@ void render(GLFWwindow* window) {
 	
 	/* Push each element in buffer_vertices to the vertex shader */
 	glDrawArrays(GL_TRIANGLES, 0, 3);
-	glDisableVertexAttribArray(attribute_coord2d);
+	glDisableVertexAttribArray(attribute_coord3d);
 }
 
 void free_resources() {
