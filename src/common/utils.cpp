@@ -1,6 +1,6 @@
 #include "../include/utils.h"
 
-char *read_from_file(const char *filename)
+char* read_from_file(const char *filename)
 {
     long int size = 0;
     FILE *file = fopen(filename, "r");
@@ -14,7 +14,7 @@ char *read_from_file(const char *filename)
     size = ftell(file);
     rewind(file);
 
-    char *result = (char *) malloc(size);
+    char *result = (char *) malloc(size+1);
     if(!result) {
         gl_log("Memory error\n");
         return NULL;
@@ -24,6 +24,7 @@ char *read_from_file(const char *filename)
         gl_log("Read file error\n");
         return NULL;
     }
+	result[size] = '\0';
 
     fclose(file);
     return result;

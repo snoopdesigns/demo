@@ -7,13 +7,13 @@ void glfw_error_callback(int error, const char* description) {
 int getMonitorWidth() {
     GLFWmonitor* mon = glfwGetPrimaryMonitor();
 	const GLFWvidmode* vmode = glfwGetVideoMode(mon); 
-	return 640;vmode->width * 0.9;
+	return vmode->width * 0.9;
 }
 
 int getMonitorHeight() {
     GLFWmonitor* mon = glfwGetPrimaryMonitor();
 	const GLFWvidmode* vmode = glfwGetVideoMode(mon); 
-	return 480;//vmode->height * 0.9;
+	return vmode->height * 0.9;
 }
 
 GLFWwindow* initializeWindow(void) {

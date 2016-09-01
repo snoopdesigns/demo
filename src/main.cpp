@@ -102,7 +102,7 @@ void render(GLFWwindow* window) {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[1]);
 	glDrawElements(GL_TRIANGLES, N_MESH * N_MESH * 6, GL_UNSIGNED_SHORT, 0);
 	
-	GLfloat bright[4] = {2, 2, 2, 1};
+	GLfloat bright[4] = {1.2, 1.2, 1.2, 1};
 	glUniform4fv(uniform_color, 1, bright);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[2]);
 	glDrawElements(GL_LINES, N_MESH * N_MESH * 10, GL_UNSIGNED_SHORT, 0);
@@ -136,7 +136,7 @@ void logic() {
 
 void mainLoop(GLFWwindow* window) {
 	do {
-		glClearColor(0.8, 0.8, 1.0, 1.0);
+		glClearColor(1.0, 1.0, 1.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		logic();
 		render(window);

@@ -23,8 +23,8 @@ float noise2f(vec3 p){
 
 float fbm(vec3 c){
 	float f = 0.0;
-	float Mul = 2;
-	float Decay = 0.5;
+	float Mul = 1.6;
+	float Decay = 0.6;
 	float w = 1.0;
 	for(int i = 0; i < 19; i++){
 		f+= w*noise2f(c);
