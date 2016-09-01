@@ -46,7 +46,7 @@ GLuint vbo[3];
 
 int init_resources(void) {
 
-	program = create_program("assets/triangle.v.glsl", "assets/triangle.f.glsl");
+	program = create_program("assets/shader.v.glsl", "assets/shader.f.glsl");
 	if (program == 0)
 		return 0;
 
