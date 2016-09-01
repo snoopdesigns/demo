@@ -23,8 +23,8 @@ float noise2f(vec3 p){
 
 float fbm(vec3 c){
 	float f = 0.0;
-	float Mul = 1.6;
-	float Decay = 0.6;
+	float Mul = 2;
+	float Decay = 0.4;
 	float w = 1.0;
 	for(int i = 0; i < 19; i++){
 		f+= w*noise2f(c);
@@ -37,5 +37,6 @@ float fbm(vec3 c){
 void main(void) {
 	graph_coord = vec4(coord2d, 0, 1);
 	graph_coord.z = fbm(vec3(coord2d,0.0));
+	mat4 vv = vertex_transform;
 	gl_Position = vertex_transform * vec4(coord2d, graph_coord.z, 1);
 }

@@ -27,9 +27,12 @@
 // Include GL headers
 #include <GL/gl.h>
 
-#define N_TEXTURE 256 // Texture size
 #define N_MESH 200 // Mesh size
-#define MESH_SCALE 10 // MEsh scale on [-1;1]
+#define N_CELLS 199 // Cells size
+#define MESH_SCALE 1 // MEsh scale on [-1;1]
+
+#define DRAW_POLYGON_LINES true
+#define DRAW_POLYGONS true
 
 GLuint program;
 GLint attribute_coord2d;
@@ -39,13 +42,13 @@ GLint uniform_color;
 bool rotate = false;
 
 float camera_x = 0.0;
-float camera_y = -20.0;
-float camera_z = 10.0;
+float camera_y = -2.0;
+float camera_z = 1.0;
 float lookat_x = 0.0;
 float lookat_y = 0.0;
 float lookat_z = 0.0;
-#define CAMERA_STEP 0.3
-#define LOOK_STEP 0.1
+#define CAMERA_STEP 0.05
+#define LOOK_STEP 0.05
 
 /*
   * 1st index is mesh vertices
@@ -68,24 +71,28 @@ int init_resources(void) {
 	glGenBuffers(3, vbo);
 
 	// Create an array for vertices
-	glm::vec2 vertices[(N_MESH + 1)*(N_MESH + 1)];
-	generateVerticesMesh(vertices, N_MESH + 1, MESH_SCALE);
+	glm::vec2 vertices[N_MESH*N_MESH];
+	generateVerticesMesh(vertices, N_MESH, MESH_SCALE);
 
 	// Tell OpenGL to copy our array to the buffer objects
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof vertices, vertices, GL_STATIC_DRAW);
 
 	// Create an array of triangles indices
-	GLushort indices[N_MESH * N_MESH * 6];
-	generateTrianglesIndices(indices, N_MESH);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[1]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof indices, indices, GL_STATIC_DRAW);
+	if (DRAW_POLYGONS) {
+		GLushort indices[N_CELLS * N_CELLS * 6];
+		generateTrianglesIndices(indices, N_CELLS);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[1]);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof indices, indices, GL_STATIC_DRAW);
+	}
 	
 	// Create an array of lines indices
-	GLushort linesIndices[N_MESH * N_MESH * 10];
-	generateLinesIndices(linesIndices, N_MESH);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[2]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof linesIndices, linesIndices, GL_STATIC_DRAW);
+	if (DRAW_POLYGON_LINES) {
+		GLushort linesIndices[N_CELLS * N_CELLS * 10];
+		generateLinesIndices(linesIndices, N_CELLS);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[2]);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof linesIndices, linesIndices, GL_STATIC_DRAW);
+    }
 	return 1;
 }
 
@@ -99,13 +106,17 @@ void render(GLFWwindow* window) {
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 	glVertexAttribPointer(attribute_coord2d, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[1]);
-	glDrawElements(GL_TRIANGLES, N_MESH * N_MESH * 6, GL_UNSIGNED_SHORT, 0);
+	if (DRAW_POLYGONS) {
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[1]);
+		glDrawElements(GL_TRIANGLES, N_CELLS * N_CELLS * 6, GL_UNSIGNED_SHORT, 0);
+	}
 	
-	GLfloat bright[4] = {1.2, 1.2, 1.2, 1};
-	glUniform4fv(uniform_color, 1, bright);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[2]);
-	glDrawElements(GL_LINES, N_MESH * N_MESH * 10, GL_UNSIGNED_SHORT, 0);
+	if (DRAW_POLYGON_LINES) {
+		GLfloat bright[4] = {1.2, 1.2, 1.2, 1};
+		glUniform4fv(uniform_color, 1, bright);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[2]);
+		glDrawElements(GL_LINES, N_CELLS * N_CELLS * 10, GL_UNSIGNED_SHORT, 0);
+	}
 
 	/* Stop using the vertex buffer object */
 	glDisableVertexAttribArray(attribute_coord2d);

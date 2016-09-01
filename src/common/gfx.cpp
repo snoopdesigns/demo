@@ -47,12 +47,12 @@ GLFWwindow* initializeWindow(void) {
 		fprintf(stderr, "Failed to initialize GLEW\n");
 		return NULL;
 	}
-	//glEnable(GL_DEPTH_TEST);
-	//glDepthFunc(GL_LESS);
-	//glEnable(GL_BLEND);
-	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	//glPolygonOffset(1, 1);
-	//glEnable(GL_POLYGON_OFFSET_FILL);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glPolygonOffset(1, 1);
+	glEnable(GL_POLYGON_OFFSET_FILL);
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 	return window;
 }
