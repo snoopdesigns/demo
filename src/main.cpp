@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <math.h>
 #include <stdarg.h>
 
 #include "include/log.h"
@@ -25,16 +24,25 @@
 // Include GL headers
 #include <GL/gl.h>
 
+#define N_TEXTURE 256 // Texture size
+#define N_MESH 100 // Mesh size
+
 GLuint program;
 GLint attribute_coord2d;
 GLint uniform_vertex_transform;
 GLuint texture_id;
 GLint uniform_mytexture;
+GLint uniform_color;
 
 bool interpolate = false;
 bool rotate = false;
 
-GLuint vbo[2];
+/*
+  * 1st index is mesh vertices
+  * 2nd index is vertices triangles indexes
+  * 3rd index is lines indexes
+*/
+GLuint vbo[3];
 
 int init_resources(void) {
 
@@ -45,73 +53,39 @@ int init_resources(void) {
 	attribute_coord2d = get_attrib(program, "coord2d");
 	uniform_vertex_transform = get_uniform(program, "vertex_transform");
 	uniform_mytexture = get_uniform(program, "mytexture");
-
-	if (attribute_coord2d == -1 || uniform_vertex_transform == -1 || uniform_mytexture == -1)
-		return 0;
-
-	// Create our datapoints, store it as bytes
-#define N_TEXTURE 256
-	GLbyte graph[N_TEXTURE][N_TEXTURE];
-
-	for (int i = 0; i < N_TEXTURE; i++) {
-		for (int j = 0; j < N_TEXTURE; j++) {
-			float x = (i - N_TEXTURE / 2) / (N_TEXTURE / 2.0);
-			float y = (j - N_TEXTURE / 2) / (N_TEXTURE / 2.0);
-			float d = hypotf(x, y) * 4.0;
-			float z = (1 - d * d) * expf(d * d / -2.0);
-
-			graph[i][j] = roundf(z * 127 + 128);
-		}
-	}
+	uniform_color = get_uniform(program, "color");
+	
+	GLbyte graph[N_TEXTURE*N_TEXTURE];
+	generateTexture(graph, N_TEXTURE);
 
 	/* Upload the texture with our datapoints */
 	glActiveTexture(GL_TEXTURE0);
 	glGenTextures(1, &texture_id);
 	glBindTexture(GL_TEXTURE_2D, texture_id);
-	gl_log("Texture ID: %d",texture_id);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, N_TEXTURE, N_TEXTURE, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, graph);
 
-	// Create two vertex buffer objects
-	glGenBuffers(2, vbo);
+	// Create three vertex buffer objects
+	glGenBuffers(3, vbo);
 
-	// Create an array for 101 * 101 vertices
-#define N_MESH 100
-#define N_MESH_DIV_TWO 50
-#define N_MESH_INC 101
-	glm::vec2 vertices[N_MESH_INC][N_MESH_INC];
-
-	for (int i = 0; i < N_MESH_INC; i++) {
-		for (int j = 0; j < N_MESH_INC; j++) {
-			vertices[i][j].x = (j - N_MESH_DIV_TWO) / 50.0; // this is N_MESH_DIV_TWO
-			vertices[i][j].y = (i - N_MESH_DIV_TWO) / 50.0;
-		}
-	}
+	// Create an array for vertices
+	glm::vec2 vertices[(N_MESH + 1)*(N_MESH + 1)];
+	generateVerticesMesh(vertices, N_MESH + 1);
 
 	// Tell OpenGL to copy our array to the buffer objects
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof vertices, vertices, GL_STATIC_DRAW);
 
-	// Create an array of indices into the vertex array that traces both horizontal and vertical lines
+	// Create an array of triangles indices
 	GLushort indices[N_MESH * N_MESH * 6];
-	int i = 0;
-
-	for (int x = 0; x < N_MESH; x++) {
-		for (int y = 0; y < N_MESH; y++) {
-			indices[i++] = x * N_MESH_INC + y;
-			indices[i++] = (x + 1) * N_MESH_INC + y;
-			indices[i++] = (x + 1) * N_MESH_INC + y + 1;
-			indices[i++] = (x + 1) * N_MESH_INC + y + 1;
-			indices[i++] = x * N_MESH_INC + y + 1;
-			indices[i++] = x * N_MESH_INC + y;
-		}
-	}
-	
-	for(int i=0;i<N_MESH * N_MESH_INC * 6;i++) {
-	    printf("%d ", indices[i]);
-	}
-
+	generateTrianglesIndices(indices, N_MESH);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[1]);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof indices, indices, GL_STATIC_DRAW);
+	
+	// Create an array of lines шndices
+	GLushort linesIndices[N_MESH * N_MESH * 10];
+	generateLinesIndices(linesIndices, N_MESH);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[2]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof linesIndices, linesIndices, GL_STATIC_DRAW);
   return 1;
 }
 
@@ -121,15 +95,20 @@ void render(GLFWwindow* window) {
 	glUniform1i(uniform_mytexture, 0);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, interpolate ? GL_LINEAR : GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, interpolate ? GL_LINEAR : GL_NEAREST);
-
-	/* Draw the grid using the indices to our vertices using our vertex buffer objects */
+	
+	GLfloat white[4] = {1, 1, 1, 1};
+    glUniform4fv(uniform_color, 1, white);
 	glEnableVertexAttribArray(attribute_coord2d);
-
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 	glVertexAttribPointer(attribute_coord2d, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[1]);
-	glDrawElements(GL_TRIANGLES, 100 * 101 * 6, GL_UNSIGNED_SHORT, 0);
+	glDrawElements(GL_TRIANGLES, N_MESH * N_MESH * 6, GL_UNSIGNED_SHORT, 0);
+	
+	GLfloat bright[4] = {2, 2, 2, 1};
+	glUniform4fv(uniform_color, 1, bright);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[2]);
+	glDrawElements(GL_LINES, N_MESH * N_MESH * 10, GL_UNSIGNED_SHORT, 0);
 
 	/* Stop using the vertex buffer object */
 	glDisableVertexAttribArray(attribute_coord2d);
@@ -141,6 +120,7 @@ void free_resources() {
   glDeleteProgram(program);
   glDeleteBuffers(1, &vbo[0]);
   glDeleteBuffers(1, &vbo[1]);
+  glDeleteBuffers(1, &vbo[2]);
 }
 
 void logic() {
