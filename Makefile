@@ -1,6 +1,6 @@
 LDIR_WIN=lib
 UNAME := $(shell uname)
-ifeq ($(UNAME), Cygwin)
+ifeq ($(UNAME), CYGWIN_NT-6.1)
 	LIBS=-lopengl32 -lglfw3 -lfreeglut -lglew32
 endif
 ifeq ($(UNAME), Linux)
