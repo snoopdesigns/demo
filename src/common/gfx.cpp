@@ -7,13 +7,13 @@ void glfw_error_callback(int error, const char* description) {
 int getMonitorWidth() {
     GLFWmonitor* mon = glfwGetPrimaryMonitor();
 	const GLFWvidmode* vmode = glfwGetVideoMode(mon); 
-	return vmode->width * 0.9;
+	return 640;vmode->width * 0.9;
 }
 
 int getMonitorHeight() {
     GLFWmonitor* mon = glfwGetPrimaryMonitor();
 	const GLFWvidmode* vmode = glfwGetVideoMode(mon); 
-	return vmode->height * 0.9;
+	return 480;//vmode->height * 0.9;
 }
 
 GLFWwindow* initializeWindow(void) {
@@ -47,12 +47,12 @@ GLFWwindow* initializeWindow(void) {
 		fprintf(stderr, "Failed to initialize GLEW\n");
 		return NULL;
 	}
-	glEnable(GL_DEPTH_TEST);
+	//glEnable(GL_DEPTH_TEST);
 	//glDepthFunc(GL_LESS);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glPolygonOffset(1, 1);
-	glEnable(GL_POLYGON_OFFSET_FILL);
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//glPolygonOffset(1, 1);
+	//glEnable(GL_POLYGON_OFFSET_FILL);
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 	return window;
 }

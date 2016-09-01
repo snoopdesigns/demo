@@ -1,7 +1,6 @@
 attribute vec2 coord2d;
 varying vec4 graph_coord;
 uniform mat4 vertex_transform;
-uniform sampler2D mytexture;
 
 float fract(float x){
 	return (x - floor(x));
@@ -37,9 +36,6 @@ float fbm(vec3 c){
 
 void main(void) {
 	graph_coord = vec4(coord2d, 0, 1);
-	graph_coord.z = (texture2D(mytexture, graph_coord.xy / 2.0 + 0.5).r);
-	mat4 vc = vertex_transform;
-	float zz = fbm(vec3(coord2d,0.0));
-	graph_coord.z = zz;
+	graph_coord.z = fbm(vec3(coord2d,0.0));
 	gl_Position = vertex_transform * vec4(coord2d, graph_coord.z, 1);
 }

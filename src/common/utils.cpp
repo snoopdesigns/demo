@@ -44,8 +44,8 @@ void generateTexture(GLbyte* graph, int size) {
 void generateVerticesMesh(glm::vec2* vertices, int size, int scale) {
 	float divider = size/(2 * scale);
 	
-	for (int i = 0; i < size + 1; i++) {
-		for (int j = 0; j < size + 1; j++) {
+	for (int i = 0; i < size; i++) {
+		for (int j = 0; j < size; j++) {
 			vertices[i*size+j].x = (j - (size/2)) / divider;
 			vertices[i*size+j].y = (i - (size/2)) / divider;
 		}

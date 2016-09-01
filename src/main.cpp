@@ -34,11 +34,8 @@
 GLuint program;
 GLint attribute_coord2d;
 GLint uniform_vertex_transform;
-GLuint texture_id;
-GLint uniform_mytexture;
 GLint uniform_color;
 
-bool interpolate = false;
 bool rotate = false;
 
 float camera_x = 0.0;
@@ -65,17 +62,7 @@ int init_resources(void) {
 
 	attribute_coord2d = get_attrib(program, "coord2d");
 	uniform_vertex_transform = get_uniform(program, "vertex_transform");
-	uniform_mytexture = get_uniform(program, "mytexture");
 	uniform_color = get_uniform(program, "color");
-	
-	GLbyte graph[N_TEXTURE*N_TEXTURE];
-	generateTexture(graph, N_TEXTURE);
-
-	/* Upload the texture with our datapoints */
-	glActiveTexture(GL_TEXTURE0);
-	glGenTextures(1, &texture_id);
-	glBindTexture(GL_TEXTURE_2D, texture_id);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, N_TEXTURE, N_TEXTURE, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, graph);
 
 	// Create three vertex buffer objects
 	glGenBuffers(3, vbo);
@@ -94,20 +81,17 @@ int init_resources(void) {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[1]);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof indices, indices, GL_STATIC_DRAW);
 	
-	// Create an array of lines шndices
+	// Create an array of lines indices
 	GLushort linesIndices[N_MESH * N_MESH * 10];
 	generateLinesIndices(linesIndices, N_MESH);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[2]);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof linesIndices, linesIndices, GL_STATIC_DRAW);
-  return 1;
+	return 1;
 }
 
 void render(GLFWwindow* window) {
 
 	glUseProgram(program);
-	glUniform1i(uniform_mytexture, 0);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, interpolate ? GL_LINEAR : GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, interpolate ? GL_LINEAR : GL_NEAREST);
 	
 	GLfloat white[4] = {1, 1, 1, 1};
     glUniform4fv(uniform_color, 1, white);
@@ -165,10 +149,6 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 {
     if (action == GLFW_PRESS) {
 		switch (key) {
-			case GLFW_KEY_F4:
-				interpolate = !interpolate;
-				printf("Interpolation is now %s\n", interpolate ? "on" : "off");
-				break;
 			case GLFW_KEY_F3:
 				rotate = !rotate;
 				printf("Rotation is now %s\n", rotate ? "on" : "off");
@@ -219,7 +199,8 @@ int main(int argc, char **argv)
 	if (window == NULL) {
 	    return 0;
 	}
-	if(!init_resources()) {
+	int res = init_resources();
+	if(res != 1) {
 	    return 0;
 	}
 	glfwSetKeyCallback(window, key_callback);
