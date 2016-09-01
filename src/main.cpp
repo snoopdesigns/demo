@@ -1,9 +1,12 @@
 // http://antongerdelan.net/opengl/glcontext2.html
 // http://learnopengl.com/#!Getting-started/Hello-Triangle
 // https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Introduction
+// https://blenderartists.org/forum/archive/index.php/t-346766.html
 // LINUX: gcc main.c -o main -lGL -lglut -lglfw -lGLEW
 // WIN: gcc -Wall -o main -L/cygdrive/c/PROJECTS/demo/lib main.c -lopengl32 -lglfw3 -lfreeglut -lglew32
 // NOISE TUTORIAL: http://www.mbsoftworks.sk/index.php?page=tutorials&series=1&tutorial=24
+
+// TODO output text (camera position etc
 
 // Include standard headers
 #include <stdio.h>
@@ -25,7 +28,8 @@
 #include <GL/gl.h>
 
 #define N_TEXTURE 256 // Texture size
-#define N_MESH 100 // Mesh size
+#define N_MESH 200 // Mesh size
+#define MESH_SCALE 10 // MEsh scale on [-1;1]
 
 GLuint program;
 GLint attribute_coord2d;
@@ -36,6 +40,15 @@ GLint uniform_color;
 
 bool interpolate = false;
 bool rotate = false;
+
+float camera_x = 0.0;
+float camera_y = -20.0;
+float camera_z = 10.0;
+float lookat_x = 0.0;
+float lookat_y = 0.0;
+float lookat_z = 0.0;
+#define CAMERA_STEP 0.3
+#define LOOK_STEP 0.1
 
 /*
   * 1st index is mesh vertices
@@ -69,7 +82,7 @@ int init_resources(void) {
 
 	// Create an array for vertices
 	glm::vec2 vertices[(N_MESH + 1)*(N_MESH + 1)];
-	generateVerticesMesh(vertices, N_MESH + 1);
+	generateVerticesMesh(vertices, N_MESH + 1, MESH_SCALE);
 
 	// Tell OpenGL to copy our array to the buffer objects
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
@@ -131,8 +144,8 @@ void logic() {
 	} else {
 		model = glm::mat4(1.0f);
 	}
-	glm::mat4 view = glm::lookAt(glm::vec3(0.0, -2.0, 2.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 0.0, 1.0));
-	glm::mat4 projection = glm::perspective(45.0f, 1.0f * 640 / 480, 0.1f, 10.0f);
+	glm::mat4 view = glm::lookAt(glm::vec3(camera_x, camera_y, camera_z), glm::vec3(lookat_x, lookat_y, lookat_z), glm::vec3(0.0, 0.0, 1.0));
+	glm::mat4 projection = glm::perspective(45.0f, 1.0f * getMonitorWidth() / getMonitorHeight(), 0.01f, 50.0f);
 	glm::mat4 vertex_transform = projection * view * model;
 	glUniformMatrix4fv(uniform_vertex_transform, 1, GL_FALSE, glm::value_ptr(vertex_transform));
 }
@@ -159,6 +172,42 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 			case GLFW_KEY_F3:
 				rotate = !rotate;
 				printf("Rotation is now %s\n", rotate ? "on" : "off");
+				break;
+			case GLFW_KEY_UP:
+				camera_y += CAMERA_STEP;
+				break;
+			case GLFW_KEY_DOWN:
+				camera_y += -1.0 * CAMERA_STEP;
+				break;
+			case GLFW_KEY_LEFT:
+				camera_x += -1.0 * CAMERA_STEP;
+				break;
+			case GLFW_KEY_RIGHT:
+				camera_x += CAMERA_STEP;
+				break;
+			case GLFW_KEY_PAGE_UP:
+				camera_z += CAMERA_STEP;
+				break;
+			case GLFW_KEY_PAGE_DOWN:
+				camera_z += -1.0 * CAMERA_STEP;
+				break;
+			case GLFW_KEY_KP_8:
+				lookat_z += LOOK_STEP;
+				break;
+			case GLFW_KEY_KP_2:
+				lookat_z += -1.0 * LOOK_STEP;
+				break;
+			case GLFW_KEY_KP_4:
+				lookat_x += -1.0 * LOOK_STEP;
+				break;
+			case GLFW_KEY_KP_6:
+				lookat_x += LOOK_STEP;
+				break;
+			case GLFW_KEY_KP_1:
+				lookat_y += LOOK_STEP;
+				break;
+			case GLFW_KEY_KP_3:
+				lookat_y += -1.0 * LOOK_STEP;
 				break;
 		}
 	}

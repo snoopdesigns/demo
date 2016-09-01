@@ -9,5 +9,7 @@
 #include "log.h"
 
 extern GLFWwindow* initializeWindow(void);
+extern int getMonitorWidth();
+extern int getMonitorHeight();
 
 #endif

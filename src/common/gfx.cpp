@@ -4,6 +4,18 @@ void glfw_error_callback(int error, const char* description) {
     gl_log_err("GLFW ERROR: code %i msg: %s\n", error, description);
 }
 
+int getMonitorWidth() {
+    GLFWmonitor* mon = glfwGetPrimaryMonitor();
+	const GLFWvidmode* vmode = glfwGetVideoMode(mon); 
+	return vmode->width * 0.9;
+}
+
+int getMonitorHeight() {
+    GLFWmonitor* mon = glfwGetPrimaryMonitor();
+	const GLFWvidmode* vmode = glfwGetVideoMode(mon); 
+	return vmode->height * 0.9;
+}
+
 GLFWwindow* initializeWindow(void) {
     if (!restart_gl_log()) {
 	    fprintf(stderr, "Failed to restart GLFW log\n");
@@ -28,7 +40,7 @@ GLFWwindow* initializeWindow(void) {
 	gl_log("width=%d\n", vmode->width);
 	gl_log("height=%d\n", vmode->height);
 	//window = glfwCreateWindow (vmode->width, vmode->height, "My first demo", mon, NULL);
-	GLFWwindow* window = glfwCreateWindow (800, 600, "My first demo", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow (getMonitorWidth(), getMonitorHeight(), "My first demo", NULL, NULL);
 	glfwMakeContextCurrent(window);
 	glewExperimental = GL_TRUE;
 	if (glewInit() != GLEW_OK) {
