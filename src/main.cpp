@@ -65,7 +65,7 @@ int init_resources(void) {
 
 	attribute_coord2d = get_attrib(program, "coord2d");
 	uniform_vertex_transform = get_uniform(program, "vertex_transform");
-	uniform_color = get_uniform(program, "color");
+	uniform_color = get_uniform(program, "draw_color");
 
 	// Create three vertex buffer objects
 	glGenBuffers(3, vbo);
