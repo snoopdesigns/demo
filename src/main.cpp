@@ -32,8 +32,8 @@
 #define N_CELLS 199 // Cells size
 #define MESH_SCALE 4 // MEsh scale on [-1;1]
 
-#define DRAW_POLYGON_LINES false
-#define DRAW_POLYGONS true
+#define DRAW_POLYGON_LINES true
+#define DRAW_POLYGONS false
 
 // Shader program
 GLuint program;
@@ -42,11 +42,14 @@ GLuint program;
 GLint attribute_coord2d;
 
 // Shader uniforms
+GLint uniform_randtexture;
 GLint uniform_m;
 GLint uniform_v;
 GLint uniform_mvp;
 GLint uniform_lightpos;
 GLint uniform_color;
+
+GLuint texture_id;
 
 bool rotate = false;
 
@@ -78,6 +81,16 @@ int init_resources(void) {
 	uniform_mvp = get_uniform(program, "mvp");
 	uniform_color = get_uniform(program, "draw_color");
 	uniform_lightpos = get_uniform(program, "lightpos");
+	uniform_randtexture = get_uniform(program, "randtexture");
+	
+	// Generate random texture
+	#define N 256
+	GLbyte graph[N*N];
+	generateTexture(graph, N);
+	glActiveTexture(GL_TEXTURE0);
+	glGenTextures(1, &texture_id);
+	glBindTexture(GL_TEXTURE_2D, texture_id);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, N, N, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, graph);
 
 	// Create three vertex buffer objects
 	glGenBuffers(3, vbo);
@@ -105,6 +118,8 @@ int init_resources(void) {
 void render(GLFWwindow* window) {
 
 	glUseProgram(program);
+	
+	glUniform1i(uniform_randtexture, 0);
 	
 	GLfloat white[4] = {1, 1, 1, 1};
     glUniform4fv(uniform_color, 1, white);
@@ -155,6 +170,14 @@ void logic() {
 	glUniformMatrix4fv(uniform_m, 1, GL_FALSE, glm::value_ptr(model));
 	glUniformMatrix4fv(uniform_v, 1, GL_FALSE, glm::value_ptr(view));
 	glUniformMatrix4fv(uniform_mvp, 1, GL_FALSE, glm::value_ptr(mvp));
+	
+	/* Set texture wrapping mode */
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, false ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, false ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+
+	/* Set texture interpolation mode */
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, false ? GL_LINEAR : GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, false ? GL_LINEAR : GL_NEAREST);
 }
 
 void mainLoop(GLFWwindow* window) {

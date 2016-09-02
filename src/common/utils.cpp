@@ -41,6 +41,8 @@ void generateTexture(GLbyte* graph, int size) {
 			float d = hypotf(x, y) * 4.0;
 			float z = (1 - d * d) * expf(d * d / -2.0);
 			graph[i*size+j] = roundf(z * 127 + 128);
+			graph[i*size+j] = roundf((float)rand()/(float)(RAND_MAX) * 127 + 128);
+			//printf("%f ", roundf((float)rand()/(float)(RAND_MAX) * 127 + 128));
 		}
 	}
 }
