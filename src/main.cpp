@@ -32,7 +32,7 @@
 #define N_CELLS 199 // Cells size
 #define MESH_SCALE 4 // MEsh scale on [-1;1]
 
-#define DRAW_POLYGON_LINES true
+#define DRAW_POLYGON_LINES false
 #define DRAW_POLYGONS true
 
 // Shader program
@@ -109,7 +109,7 @@ void render(GLFWwindow* window) {
 	GLfloat white[4] = {1, 1, 1, 1};
     glUniform4fv(uniform_color, 1, white);
 	
-	glm::vec3 lightPos = glm::vec3(8,8,5);
+	glm::vec3 lightPos = glm::vec3(8,8,10);
 	glUniform3f(uniform_lightpos, lightPos.x, lightPos.y, lightPos.z);
 	
 	glEnableVertexAttribArray(attribute_coord2d);

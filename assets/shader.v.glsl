@@ -4,12 +4,11 @@ uniform mat4 v;
 uniform mat4 mvp;
 uniform vec3 lightpos;
 
-varying vec4 graph_coord;
-varying vec3 Position_worldspace;
-varying vec3 LightPosition_worldspace;
-varying vec3 Normal_cameraspace;
-varying vec3 EyeDirection_cameraspace;
-varying vec3 LightDirection_cameraspace;
+varying vec3 vertexpos_worldspace;
+varying vec3 lightpos_worldspace;
+varying vec3 normal_cameraspace;
+varying vec3 eyedirection_cameraspace;
+varying vec3 lightdirection_cameraspace;
 
 float rand(vec2 n) { 
     return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
@@ -39,18 +38,15 @@ float fbm(vec2 p){
 }
 
 void main(void) {
-	mat4 vv = m * v;
-	vec3 ll = lightpos * lightpos;
-	graph_coord = vec4(coord2d, 0, 1);
-	graph_coord.z = fbm(coord2d);
-	gl_Position = mvp * vec4(coord2d, graph_coord.z, 1);
+	float z = fbm(coord2d); // Generating terrain height
+	gl_Position = mvp * vec4(coord2d, z, 1); // Setting up vertex position
 	vec3 normal = gl_Normal.xyz;
 	
-	Position_worldspace = (m * vec4(graph_coord)).xyz;
-	vec3 vertexPosition_cameraspace = ( v * m * vec4(graph_coord)).xyz;
-	EyeDirection_cameraspace = vec3(0,0,0) - vertexPosition_cameraspace;
-	vec3 LightPosition_cameraspace = ( v * vec4(lightpos,1)).xyz;
-	LightDirection_cameraspace = lightpos + EyeDirection_cameraspace;
-	Normal_cameraspace = ( v * m * vec4(normal,0)).xyz;
-	LightPosition_worldspace = lightpos;
+	vertexpos_worldspace = (m * vec4(gl_Position.xyz, 1.0)).xyz; // Position of the vertex, in worldspace : M * position
+	vec3 vertexpos_worldspace = ( v * m * vec4(gl_Position.xyz, 1.0)).xyz; // Vector that goes from the vertex to the camera, in camera space.
+	eyedirection_cameraspace = vec3(0,0,0) - vertexpos_worldspace;
+	vec3 lightpos_cameraspace = ( v * vec4(lightpos,1)).xyz; // Vector that goes from the vertex to the light, in camera space. M is ommited because it's identity.
+	lightdirection_cameraspace = lightpos + eyedirection_cameraspace;
+	normal_cameraspace = ( v * m * vec4(normal,0)).xyz; // Normal of the the vertex, in camera space
+	lightpos_worldspace = lightpos;
 }
