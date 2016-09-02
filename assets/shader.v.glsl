@@ -1,6 +1,6 @@
 attribute vec2 coord2d;
 varying vec4 graph_coord;
-uniform mat4 vertex_transform;
+uniform mat4 mvp;
 
 float rand(vec2 n) { 
     return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
@@ -32,5 +32,5 @@ float fbm(vec2 p){
 void main(void) {
 	graph_coord = vec4(coord2d, 0, 1);
 	graph_coord.z = fbm(coord2d);
-	gl_Position = vertex_transform * vec4(coord2d, graph_coord.z, 1);
+	gl_Position = mvp * vec4(coord2d, graph_coord.z, 1);
 }

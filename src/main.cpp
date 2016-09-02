@@ -2,6 +2,7 @@
 // http://learnopengl.com/#!Getting-started/Hello-Triangle
 // https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Introduction
 // https://blenderartists.org/forum/archive/index.php/t-346766.html
+// http://www.opengl-tutorial.org/beginners-tutorials/tutorial-8-basic-shading/
 // LINUX: gcc main.c -o main -lGL -lglut -lglfw -lGLEW
 // WIN: gcc -Wall -o main -L/cygdrive/c/PROJECTS/demo/lib main.c -lopengl32 -lglfw3 -lfreeglut -lglew32
 // NOISE TUTORIAL: http://www.mbsoftworks.sk/index.php?page=tutorials&series=1&tutorial=24
@@ -29,14 +30,14 @@
 
 #define N_MESH 200 // Mesh size
 #define N_CELLS 199 // Cells size
-#define MESH_SCALE 1 // MEsh scale on [-1;1]
+#define MESH_SCALE 4 // MEsh scale on [-1;1]
 
 #define DRAW_POLYGON_LINES true
 #define DRAW_POLYGONS true
 
 GLuint program;
 GLint attribute_coord2d;
-GLint uniform_vertex_transform;
+GLint uniform_mvp;
 GLint uniform_color;
 
 bool rotate = false;
@@ -64,7 +65,7 @@ int init_resources(void) {
 		return 0;
 
 	attribute_coord2d = get_attrib(program, "coord2d");
-	uniform_vertex_transform = get_uniform(program, "vertex_transform");
+	uniform_mvp = get_uniform(program, "mvp");
 	uniform_color = get_uniform(program, "draw_color");
 
 	// Create three vertex buffer objects
@@ -141,8 +142,8 @@ void logic() {
 	}
 	glm::mat4 view = glm::lookAt(glm::vec3(camera_x, camera_y, camera_z), glm::vec3(lookat_x, lookat_y, lookat_z), glm::vec3(0.0, 0.0, 1.0));
 	glm::mat4 projection = glm::perspective(45.0f, 1.0f * getMonitorWidth() / getMonitorHeight(), 0.01f, 50.0f);
-	glm::mat4 vertex_transform = projection * view * model;
-	glUniformMatrix4fv(uniform_vertex_transform, 1, GL_FALSE, glm::value_ptr(vertex_transform));
+	glm::mat4 mvp = projection * view * model;
+	glUniformMatrix4fv(uniform_mvp, 1, GL_FALSE, glm::value_ptr(mvp));
 }
 
 void mainLoop(GLFWwindow* window) {
@@ -158,7 +159,7 @@ void mainLoop(GLFWwindow* window) {
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    if (action == GLFW_PRESS) {
+    if (action == GLFW_REPEAT || action == GLFW_PRESS) {
 		switch (key) {
 			case GLFW_KEY_F3:
 				rotate = !rotate;
