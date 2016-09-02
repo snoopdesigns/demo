@@ -13,11 +13,41 @@ varying vec3 lightdirection_cameraspace;
 
 varying vec3 texture_color;
 
+// OLD FBM
+float rand(vec2 n) { 
+    return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
+}
+
+float noise(vec2 p){
+    vec2 ip = floor(p);
+    vec2 u = fract(p);
+    u = u*u*(3.0-2.0*u);
+
+    float res = mix(
+        mix(rand(ip),rand(ip+vec2(1.0,0.0)),u.x),
+        mix(rand(ip+vec2(0.0,1.0)),rand(ip+vec2(1.0,1.0)),u.x),u.y);
+    return res*res;
+}
+
+float fbm(vec2 p){
+    float f = 0.0;
+    f = 0.5000000f*noise(vec2(1.0f*p[0], 1.0f*p[1]));
+	f += 0.2500000f*noise(vec2(2.0f*p[0], 2.0f*p[1]));
+	f += 0.1250000f*noise(vec2(4.0f*p[0], 4.0f*p[1]));
+	f += 0.0625000f*noise(vec2(8.0f*p[0], 8.0f*p[1]));
+	f += 0.0312500f*noise(vec2(16.0f*p[0], 16.0f*p[1]));
+	f += 0.0156250f*noise(vec2(32.0f*p[0], 32.0f*p[1]));
+	f += 0.0078125f*noise(vec2(64.0f*p[0], 64.0f*p[1]));
+    return f/0.9375;
+}
+
+
+// MODIFIED FBM
 vec3 no(vec2 p)
 {
     //vec2 f=p-floor(p);
     //vec2 u=f*f*f*(f*(f*6-15)+10);
-    //float a=(texture2D(randtexture,floor(p) * 0.76/ 2.0 + 0.5).r);
+    //float a=(texture2D(randtexture,(floor(p) + vec2(0.0,0.0).256)).r);
     //float b=(texture2D(randtexture,floor(p) * 0.32/ 2.0 + 0.5).r);
     //float c=(texture2D(randtexture,floor(p) * -0.59/ 2.0 + 0.5).r);
     //float d=(texture2D(randtexture,floor(p) * -0.91/ 2.0 + 0.5).r);
@@ -29,10 +59,14 @@ vec3 no(vec2 p)
 	float dv = 30.0*v*v*(v*(v-2.0)+1.0);
 	u = u*u*u*(u*(u*6.0-15.0)+10.0);
 	v = u*u*u*(u*(u*6.0-15.0)+10.0);
-	float a=(texture2D(randtexture,floor(p) * 0.76/ 2.0 + 0.5).r);
-    float b=(texture2D(randtexture,floor(p) * 0.32/ 2.0 + 0.5).r);
-    float c=(texture2D(randtexture,floor(p) * -0.59/ 2.0 + 0.5).r);
-    float d=(texture2D(randtexture,floor(p) * -0.91/ 2.0 + 0.5).r);
+	//float a=(texture2D(randtexture,(floor(p) + vec2(0.0,0.0)/256)).r);
+    //float b=(texture2D(randtexture,(floor(p) + vec2(1.0,0.0)/256)).r);
+    //float c=(texture2D(randtexture,(floor(p) + vec2(0.0,1.0)/256)).r);
+    //float d=(texture2D(randtexture,(floor(p) + vec2(1.0,1.0)/256)).r);
+	float a = noise(vec2(0.0,0.0) - floor(p));
+	float b = noise(vec2(-1.0,0.0) + floor(p));
+	float c = noise(vec2(0.0,-1.0) + floor(p));
+	float d = noise(vec2(1.0,1.0) - floor(p));
 	
 	float k0 =  a;
     float k1 =  b - a;
@@ -46,7 +80,7 @@ vec3 no(vec2 p)
 	return res;
 }
 
-float ffff(vec2 p,float o)
+float mod_fbm(vec2 p,float o)
 {
     vec2 d=vec2(0.0, 0.0);
 	float f=0;
@@ -68,9 +102,10 @@ vec3 calculate_texture_color(vec2 p) {
 }
 
 void main(void) {
-	//float z = ffff(coord2d, 10); // Generating terrain height
+	//float z = mod_fbm(coord2d, 10); // Generating terrain height
+	float z = fbm(coord2d); // Generating terrain height
 	//mvp * 
-	gl_Position = mvp * vec4(coord2d, ffff(coord2d, 10), 1); // Setting up vertex position
+	gl_Position = mvp * vec4(coord2d, z, 1); // Setting up vertex position
 	vec3 normal = gl_Normal.xyz;
 	
 	vertexpos_worldspace = (m * vec4(gl_Position.xyz, 1.0)).xyz; // Position of the vertex, in worldspace : M * position
