@@ -59,6 +59,18 @@ void generateVerticesMesh(glm::vec2* vertices, int size, int scale) {
 	}
 }
 
+glm::vec3 calculateSurfaceNormal(glm::vec2 p1, glm::vec2 p2, glm::vec2 p3) {
+	glm::vec3 normal = glm::vec3(0.0f);
+	glm::vec2 U = p2 - p1;
+	glm::vec2 V = p3 - p1;
+
+	normal[0] = (U[1] * V[2]) - (U[2] * V[1]);
+	normal[1] = (U[2] * V[0]) - (U[0] * V[2]);
+	normal[2] = (U[0] * V[1]) - (U[1] * V[0]);
+
+	return normal;
+}
+
 void generateTrianglesIndices(GLushort* indices, int size) {
     int i = 0;
 	for (int x = 0; x < size; x++) {

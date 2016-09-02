@@ -35,9 +35,17 @@
 #define DRAW_POLYGON_LINES true
 #define DRAW_POLYGONS true
 
+// Shader program
 GLuint program;
+
+// Shader attributes
 GLint attribute_coord2d;
+
+// Shader uniforms
+GLint uniform_m;
+GLint uniform_v;
 GLint uniform_mvp;
+GLint uniform_lightpos;
 GLint uniform_color;
 
 bool rotate = false;
@@ -65,8 +73,11 @@ int init_resources(void) {
 		return 0;
 
 	attribute_coord2d = get_attrib(program, "coord2d");
+	uniform_m = get_uniform(program, "m");
+	uniform_v = get_uniform(program, "v");
 	uniform_mvp = get_uniform(program, "mvp");
 	uniform_color = get_uniform(program, "draw_color");
+	uniform_lightpos = get_uniform(program, "lightpos");
 
 	// Create three vertex buffer objects
 	glGenBuffers(3, vbo);
@@ -74,26 +85,20 @@ int init_resources(void) {
 	// Create an array for vertices
 	glm::vec2 vertices[N_MESH*N_MESH];
 	generateVerticesMesh(vertices, N_MESH, MESH_SCALE);
-
-	// Tell OpenGL to copy our array to the buffer objects
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof vertices, vertices, GL_STATIC_DRAW);
-
-	// Create an array of triangles indices
-	if (DRAW_POLYGONS) {
-		GLushort indices[N_CELLS * N_CELLS * 6];
-		generateTrianglesIndices(indices, N_CELLS);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[1]);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof indices, indices, GL_STATIC_DRAW);
-	}
 	
-	// Create an array of lines indices
-	if (DRAW_POLYGON_LINES) {
-		GLushort linesIndices[N_CELLS * N_CELLS * 10];
-		generateLinesIndices(linesIndices, N_CELLS);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[2]);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof linesIndices, linesIndices, GL_STATIC_DRAW);
-    }
+	// Create and array for triangle indices
+	GLushort indices[N_CELLS * N_CELLS * 6];
+	generateTrianglesIndices(indices, N_CELLS);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[1]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof indices, indices, GL_STATIC_DRAW);
+	
+	// Create and array for triangle lines indices
+	GLushort linesIndices[N_CELLS * N_CELLS * 10];
+	generateLinesIndices(linesIndices, N_CELLS);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[2]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof linesIndices, linesIndices, GL_STATIC_DRAW);
 	return 1;
 }
 
@@ -103,6 +108,10 @@ void render(GLFWwindow* window) {
 	
 	GLfloat white[4] = {1, 1, 1, 1};
     glUniform4fv(uniform_color, 1, white);
+	
+	glm::vec3 lightPos = glm::vec3(8,8,5);
+	glUniform3f(uniform_lightpos, lightPos.x, lightPos.y, lightPos.z);
+	
 	glEnableVertexAttribArray(attribute_coord2d);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 	glVertexAttribPointer(attribute_coord2d, 2, GL_FLOAT, GL_FALSE, 0, 0);
@@ -143,6 +152,8 @@ void logic() {
 	glm::mat4 view = glm::lookAt(glm::vec3(camera_x, camera_y, camera_z), glm::vec3(lookat_x, lookat_y, lookat_z), glm::vec3(0.0, 0.0, 1.0));
 	glm::mat4 projection = glm::perspective(45.0f, 1.0f * getMonitorWidth() / getMonitorHeight(), 0.01f, 50.0f);
 	glm::mat4 mvp = projection * view * model;
+	glUniformMatrix4fv(uniform_m, 1, GL_FALSE, glm::value_ptr(model));
+	glUniformMatrix4fv(uniform_v, 1, GL_FALSE, glm::value_ptr(view));
 	glUniformMatrix4fv(uniform_mvp, 1, GL_FALSE, glm::value_ptr(mvp));
 }
 
