@@ -3,6 +3,7 @@ varying vec3 lightpos_worldspace;
 varying vec3 normal_cameraspace;
 varying vec3 eyedirection_cameraspace;
 varying vec3 lightdirection_cameraspace;
+varying vec3 texture_color;
 uniform vec4 draw_color;
 
 void main(void){
@@ -11,7 +12,7 @@ void main(void){
 	float LightPower = 70.0f;
 	
 	// Material properties
-	vec3 MaterialDiffuseColor = vec3(0.6, 0.6, 0.6);
+	vec3 MaterialDiffuseColor = texture_color;//vec3(0.6, 0.6, 0.6);
 	vec3 MaterialAmbientColor = vec3(0.1,0.1,0.1) * MaterialDiffuseColor;
 	vec3 MaterialSpecularColor = vec3(0.3,0.3,0.3);
 	

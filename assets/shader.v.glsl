@@ -10,6 +10,8 @@ varying vec3 normal_cameraspace;
 varying vec3 eyedirection_cameraspace;
 varying vec3 lightdirection_cameraspace;
 
+varying vec3 texture_color;
+
 float rand(vec2 n) { 
     return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
 }
@@ -37,6 +39,10 @@ float fbm(vec2 p){
     return f/0.9375;
 }
 
+vec3 calculate_texture_color(vec2 p) {
+	return vec3(.55,.65,.75);
+}
+
 void main(void) {
 	float z = fbm(coord2d); // Generating terrain height
 	gl_Position = mvp * vec4(coord2d, z, 1); // Setting up vertex position
@@ -49,4 +55,5 @@ void main(void) {
 	lightdirection_cameraspace = lightpos + eyedirection_cameraspace;
 	normal_cameraspace = ( v * m * vec4(normal,0)).xyz; // Normal of the the vertex, in camera space
 	lightpos_worldspace = lightpos;
+	texture_color = calculate_texture_color(coord2d);
 }
