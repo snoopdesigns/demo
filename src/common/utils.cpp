@@ -36,11 +36,6 @@ char* read_from_file(const char *filename)
 void generateTexture(GLbyte* graph, int size) {
 	for (int i = 0; i < size; i++) {
 		for (int j = 0; j < size; j++) {
-			float x = (i - size / 2) / (size / 2.0);
-			float y = (j - size / 2) / (size / 2.0);
-			float d = hypotf(x, y) * 4.0;
-			float z = (1 - d * d) * expf(d * d / -2.0);
-			graph[i*size+j] = roundf(z * 127 + 128);
 			graph[i*size+j] = roundf((float)rand()/(float)(RAND_MAX) * 127 + 128);
 			//printf("%f ", roundf((float)rand()/(float)(RAND_MAX) * 127 + 128));
 		}
@@ -48,14 +43,14 @@ void generateTexture(GLbyte* graph, int size) {
 }
 
 void generateVerticesMesh(glm::vec2* vertices, int size, int scale) {
-	float ratio_x = (2.0 * scale) / (size-1);
-	float ratio_y = (2.0 * scale) / (size-1);
+	float ratio_x = (1.0 * scale) / (size-1);
+	float ratio_y = (1.0 * scale) / (size-1);
 	
 	
 	for (int i = 0; i < size; i++) {
 		for (int j = 0; j < size; j++) {
-			vertices[i*size+j].x = (-1.0 * scale) + j * ratio_x;
-			vertices[i*size+j].y = (1.0 * scale) - i * ratio_y;
+			vertices[i*size+j].x = j * ratio_x;
+			vertices[i*size+j].y = i * ratio_y;
 			if(DEBUG) gl_log("Vertex generated: [%f, %f]\n", vertices[i*size+j].x, vertices[i*size+j].y);
 		}
 	}

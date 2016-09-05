@@ -47,7 +47,8 @@ GLFWwindow* initializeWindow(void) {
 		fprintf(stderr, "Failed to initialize GLEW\n");
 		return NULL;
 	}
-	glEnable(GL_CULL_FACE);
+	//glutInitDisplayMode(GLUT_RGBA|GLUT_DEPTH|GLUT_DOUBLE);
+	glCullFace(GL_FRONT_AND_BACK);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glEnable(GL_BLEND);

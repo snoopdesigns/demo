@@ -55,10 +55,10 @@ GLuint texture_id;
 bool rotate = false;
 
 float camera_x = 0.0;
-float camera_y = -1.0 * MESH_SCALE;
+float camera_y = 0.0;
 float camera_z = 7.0;
-float lookat_x = 0.0;
-float lookat_y = 0.0;
+float lookat_x = MESH_SCALE / 2.0;
+float lookat_y = MESH_SCALE / 2.0;
 float lookat_z = 0.0;
 #define CAMERA_STEP 0.05
 #define LOOK_STEP 0.05
@@ -166,7 +166,7 @@ void logic() {
 		model = glm::mat4(1.0f);
 	}
 	glm::mat4 view = glm::lookAt(glm::vec3(camera_x, camera_y, camera_z), glm::vec3(lookat_x, lookat_y, lookat_z), glm::vec3(0.0, 0.0, 1.0));
-	glm::mat4 projection = glm::perspective(45.0f, 1.0f * getMonitorWidth() / getMonitorHeight(), 0.01f, 50.0f);
+	glm::mat4 projection = glm::perspective(45.0f, 1.0f * getMonitorWidth() / getMonitorHeight(), 0.01f, 500.0f);
 	glm::mat4 mvp = projection * view * model;
 	glUniformMatrix4fv(uniform_m, 1, GL_FALSE, glm::value_ptr(model));
 	glUniformMatrix4fv(uniform_v, 1, GL_FALSE, glm::value_ptr(view));
