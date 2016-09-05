@@ -9,7 +9,7 @@ uniform vec4 draw_color;
 void main(void){
 
 	vec3 LightColor = vec3(1,1,1); // Light emission properties
-	float LightPower = 70.0f;
+	float LightPower = 700.0f;
 	
 	// Material properties
 	vec3 MaterialDiffuseColor = texture_color;//vec3(0.6, 0.6, 0.6);

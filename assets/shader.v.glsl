@@ -51,10 +51,14 @@ vec3 no(vec2 p)
 	float dv = 30.0*v*v*(v*(v-2.0)+1.0);
 	u = u*u*u*(u*(u*6.0-15.0)+10.0);
 	v = u*u*u*(u*(u*6.0-15.0)+10.0);
-	float a = noise(vec2(0.0,0.0) - floor(p));
-	float b = noise(vec2(-1.0,0.0) + floor(p));
-	float c = noise(vec2(0.0,-1.0) + floor(p));
-	float d = noise(vec2(1.0,1.0) - floor(p));
+	//float a = texture2D(randtexture, p*0.75 / 2.0 + 0.5).r;
+	//float b = texture2D(randtexture, p*0.55 / 2.0 + 0.5).r;
+	//float c = texture2D(randtexture, p*0.25 / 2.0 + 0.5).r;
+	//float d = texture2D(randtexture, p*0.45 / 2.0 + 0.5).r;
+	float a = noise(p);
+	float b = noise(p);
+	float c = noise(p);
+	float d = noise(p);
 	
 	float k0 =  a;
     float k1 =  b - a;
@@ -64,7 +68,7 @@ vec3 no(vec2 p)
 	vec3 res;
 	res[0] = k0 + k1*u + k2*v + k4*u*v;
 	res[1] = du * (k1 + k4 * v);
-	res[2] = du * (k2 + k4 * v);
+	res[2] = dv * (k2 + k4 * u);
 	return res;
 }
 
@@ -104,10 +108,13 @@ vec3 calculate_texture_color(vec2 p) {
 }
 
 void main(void) {
-	//float z = fbm_mod(coord2d, 10); // Generating terrain height
+	float z = fbm_mod(coord2d, 20); // Generating terrain height
 	//float z = fbm_dnoise2f(coord2d, 10); // fbm with old noise
-	float z = fbm(coord2d); // Generating terrain height
-	//mvp * 
+	//float z = fbm(coord2d); // Generating terrain height
+	//float z = no(coord2d)[0];
+	//float z = texture2D(randtexture, (floor(coord2d)+vec2(0,0))/256).r;
+	//float z = texture2D(randtexture, coord2d / 2.0 + 0.5).r;
+	
 	gl_Position = mvp * vec4(coord2d, z, 1); // Setting up vertex position
 	vec3 normal = gl_Normal.xyz;
 	
