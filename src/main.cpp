@@ -46,7 +46,6 @@ GLint uniform_randtexture;
 GLint uniform_m;
 GLint uniform_v;
 GLint uniform_mvp;
-GLint uniform_lightpos;
 GLint uniform_camerapos;
 GLint uniform_line_flag;
 
@@ -56,7 +55,7 @@ bool rotate = false;
 
 float camera_x = 0.0;
 float camera_y = 0.0;
-float camera_z = 7.0;
+float camera_z = 15.0;
 float lookat_x = MESH_SCALE / 2.0;
 float lookat_y = MESH_SCALE / 2.0;
 float lookat_z = 0.0;
@@ -81,7 +80,6 @@ int init_resources(void) {
 	uniform_v = get_uniform(program, "v");
 	uniform_mvp = get_uniform(program, "mvp");
 	uniform_line_flag = get_uniform(program, "line_flag");
-	uniform_lightpos = get_uniform(program, "lightpos");
 	uniform_camerapos = get_uniform(program, "camerapos");
 	uniform_randtexture = get_uniform(program, "randtexture");
 	
@@ -123,9 +121,6 @@ void render(GLFWwindow* window) {
 	
 	glUniform1i(uniform_randtexture, 0);
 	glUniform1i(uniform_line_flag, 0);
-	
-	glm::vec3 lightPos = glm::vec3(MESH_SCALE + 5,MESH_SCALE + 5,20);
-	glUniform3f(uniform_lightpos, lightPos.x, lightPos.y, lightPos.z);
 	
 	glUniform3f(uniform_camerapos, camera_x, camera_y, camera_z);
 	
@@ -183,7 +178,8 @@ void logic() {
 
 void mainLoop(GLFWwindow* window) {
 	do {
-		glClearColor(1.0, 1.0, 1.0, 1.0);
+		//glClearColor(1.0, 1.0, 1.0, 1.0);
+		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		logic();
 		render(window);
