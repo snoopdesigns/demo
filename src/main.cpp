@@ -30,7 +30,7 @@
 
 #define N_MESH 200 // Mesh size
 #define N_CELLS 199 // Cells size
-#define MESH_SCALE 20 // MEsh scale on [-1;1]
+#define MESH_SCALE 20 // Mesh scale on [-1;1]
 
 #define DRAW_POLYGON_LINES true
 #define DRAW_POLYGONS true
@@ -47,15 +47,16 @@ GLint uniform_m;
 GLint uniform_v;
 GLint uniform_mvp;
 GLint uniform_lightpos;
-GLint uniform_color;
+GLint uniform_camerapos;
+GLint uniform_line_flag;
 
 GLuint texture_id;
 
 bool rotate = false;
 
 float camera_x = 0.0;
-float camera_y = -2.0;
-float camera_z = 1.0;
+float camera_y = -1.0 * MESH_SCALE;
+float camera_z = 7.0;
 float lookat_x = 0.0;
 float lookat_y = 0.0;
 float lookat_z = 0.0;
@@ -79,8 +80,9 @@ int init_resources(void) {
 	uniform_m = get_uniform(program, "m");
 	uniform_v = get_uniform(program, "v");
 	uniform_mvp = get_uniform(program, "mvp");
-	uniform_color = get_uniform(program, "draw_color");
+	uniform_line_flag = get_uniform(program, "line_flag");
 	uniform_lightpos = get_uniform(program, "lightpos");
+	uniform_camerapos = get_uniform(program, "camerapos");
 	uniform_randtexture = get_uniform(program, "randtexture");
 	
 	// Generate random texture
@@ -120,12 +122,12 @@ void render(GLFWwindow* window) {
 	glUseProgram(program);
 	
 	glUniform1i(uniform_randtexture, 0);
-	
-	GLfloat white[4] = {1, 1, 1, 1};
-    glUniform4fv(uniform_color, 1, white);
+	glUniform1i(uniform_line_flag, 0);
 	
 	glm::vec3 lightPos = glm::vec3(MESH_SCALE + 5,MESH_SCALE + 5,20);
 	glUniform3f(uniform_lightpos, lightPos.x, lightPos.y, lightPos.z);
+	
+	glUniform3f(uniform_camerapos, camera_x, camera_y, camera_z);
 	
 	glEnableVertexAttribArray(attribute_coord2d);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
@@ -137,8 +139,7 @@ void render(GLFWwindow* window) {
 	}
 	
 	if (DRAW_POLYGON_LINES) {
-		GLfloat bright[4] = {1.2, 1.2, 1.2, 1};
-		glUniform4fv(uniform_color, 1, bright);
+		glUniform1i(uniform_line_flag, 1);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[2]);
 		glDrawElements(GL_LINES, N_CELLS * N_CELLS * 10, GL_UNSIGNED_SHORT, 0);
 	}
