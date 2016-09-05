@@ -41,17 +41,9 @@ float fbm(vec2 p){
     return f/0.9375;
 }
 
-
 // MODIFIED FBM
 vec3 no(vec2 p)
 {
-    //vec2 f=p-floor(p);
-    //vec2 u=f*f*f*(f*(f*6-15)+10);
-    //float a=(texture2D(randtexture,(floor(p) + vec2(0.0,0.0).256)).r);
-    //float b=(texture2D(randtexture,floor(p) * 0.32/ 2.0 + 0.5).r);
-    //float c=(texture2D(randtexture,floor(p) * -0.59/ 2.0 + 0.5).r);
-    //float d=(texture2D(randtexture,floor(p) * -0.91/ 2.0 + 0.5).r);
-	//return vec3(a+(b-a)*u.x+(c-a)*u.y+(a-b-c+d)*u.x*u.y,30*f*f*(f*(f-2)+1)*(vec2(b-a,c-a)+(a-b-c+d)*u.yx));
 	
 	float u = p[0]-floor(p[0]);
 	float v = p[1]-floor(p[1]);
@@ -59,10 +51,6 @@ vec3 no(vec2 p)
 	float dv = 30.0*v*v*(v*(v-2.0)+1.0);
 	u = u*u*u*(u*(u*6.0-15.0)+10.0);
 	v = u*u*u*(u*(u*6.0-15.0)+10.0);
-	//float a=(texture2D(randtexture,(floor(p) + vec2(0.0,0.0)/256)).r);
-    //float b=(texture2D(randtexture,(floor(p) + vec2(1.0,0.0)/256)).r);
-    //float c=(texture2D(randtexture,(floor(p) + vec2(0.0,1.0)/256)).r);
-    //float d=(texture2D(randtexture,(floor(p) + vec2(1.0,1.0)/256)).r);
 	float a = noise(vec2(0.0,0.0) - floor(p));
 	float b = noise(vec2(-1.0,0.0) + floor(p));
 	float c = noise(vec2(0.0,-1.0) + floor(p));
@@ -80,7 +68,7 @@ vec3 no(vec2 p)
 	return res;
 }
 
-float mod_fbm(vec2 p,float o)
+float fbm_mod(vec2 p,float o)
 {
     vec2 d=vec2(0.0, 0.0);
 	float f=0;
@@ -97,12 +85,27 @@ float mod_fbm(vec2 p,float o)
     return f;
 }
 
+float fbm_dnoise2f(vec2 p,float o){
+	float f=0;
+    float w=3;
+    for(float i=0;i<o;i++)
+    {
+        float n=noise(.25*p);
+        f = f + w*n;
+		w = w * 0.5;
+		p[0] = 2.0 * p[0];
+		p[1] = 2.0 * p[1];
+    }
+    return f;
+}
+
 vec3 calculate_texture_color(vec2 p) {
 	return vec3(.55,.65,.75);
 }
 
 void main(void) {
-	//float z = mod_fbm(coord2d, 10); // Generating terrain height
+	//float z = fbm_mod(coord2d, 10); // Generating terrain height
+	//float z = fbm_dnoise2f(coord2d, 10); // fbm with old noise
 	float z = fbm(coord2d); // Generating terrain height
 	//mvp * 
 	gl_Position = mvp * vec4(coord2d, z, 1); // Setting up vertex position
