@@ -43,14 +43,14 @@ void generateTexture(GLbyte* graph, int size) {
 }
 
 void generateVerticesMesh(glm::vec2* vertices, int size, int scale) {
-	float ratio_x = (1.0 * scale) / (size-1);
-	float ratio_y = (1.0 * scale) / (size-1);
+	float ratio_x = (2.0 * scale) / (size-1);
+	float ratio_y = (2.0 * scale) / (size-1);
 	
 	
 	for (int i = 0; i < size; i++) {
 		for (int j = 0; j < size; j++) {
-			vertices[i*size+j].x = j * ratio_x;
-			vertices[i*size+j].y = i * ratio_y;
+			vertices[i*size+j].x = (-1.0 * scale) + j * ratio_x;
+			vertices[i*size+j].y = (1.0 * scale) - i * ratio_y;
 			if(DEBUG) gl_log("Vertex generated: [%f, %f]\n", vertices[i*size+j].x, vertices[i*size+j].y);
 		}
 	}
@@ -69,7 +69,7 @@ glm::vec3 calculateSurfaceNormal(glm::vec2 p1, glm::vec2 p2, glm::vec2 p3) {
 }
 
 void generateTrianglesIndices(GLushort* indices, int size) {
-    int i = 0;
+    unsigned long i = 0;
 	for (int x = 0; x < size; x++) {
 		for (int y = 0; y < size; y++) {
 			indices[i++] = x * (size + 1) + y;
@@ -84,7 +84,7 @@ void generateTrianglesIndices(GLushort* indices, int size) {
 }
 
 void generateLinesIndices(GLushort* indices, int size) {
-    int i = 0;
+    unsigned long i = 0;
 	for (int x = 0; x < size; x++) {
 		for (int y = 0; y < size; y++) {
 			indices[i++] = x * (size+1) + y;

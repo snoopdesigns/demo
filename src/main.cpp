@@ -28,8 +28,8 @@
 // Include GL headers
 #include <GL/gl.h>
 
-#define N_MESH 200 // Mesh size
-#define N_CELLS 199 // Cells size
+#define N_MESH 256 // Mesh size
+#define N_CELLS 255 // Cells size
 #define MESH_SCALE 20 // Mesh scale on [-1;1]
 
 #define DRAW_POLYGON_LINES true
@@ -54,10 +54,10 @@ GLuint texture_id;
 bool rotate = false;
 
 float camera_x = 0.0;
-float camera_y = 0.0;
-float camera_z = 15.0;
-float lookat_x = MESH_SCALE / 2.0;
-float lookat_y = MESH_SCALE / 2.0;
+float camera_y = -15.0 - MESH_SCALE;
+float camera_z = 1.0 + MESH_SCALE;
+float lookat_x = 0.0;
+float lookat_y = 0.0;
 float lookat_z = 0.0;
 #define CAMERA_STEP 0.05
 #define LOOK_STEP 0.05
@@ -85,7 +85,7 @@ int init_resources(void) {
 	
 	// Generate random texture
 	#define N 256
-	GLbyte graph[N*N];
+	GLbyte* graph = new GLbyte[N*N];
 	generateTexture(graph, N);
 	glActiveTexture(GL_TEXTURE0);
 	glGenTextures(1, &texture_id);
@@ -96,22 +96,22 @@ int init_resources(void) {
 	glGenBuffers(3, vbo);
 
 	// Create an array for vertices
-	glm::vec2 vertices[N_MESH*N_MESH];
+	glm::vec2* vertices = new glm::vec2[N_MESH*N_MESH];
 	generateVerticesMesh(vertices, N_MESH, MESH_SCALE);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof vertices, vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * N_MESH*N_MESH, vertices, GL_STATIC_DRAW);
 	
 	// Create and array for triangle indices
-	GLushort indices[N_CELLS * N_CELLS * 6];
+	GLushort* indices = new GLushort[N_CELLS * N_CELLS * 6];
 	generateTrianglesIndices(indices, N_CELLS);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[1]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof indices, indices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort) * N_CELLS * N_CELLS * 6, indices, GL_STATIC_DRAW);
 	
 	// Create and array for triangle lines indices
-	GLushort linesIndices[N_CELLS * N_CELLS * 10];
+	GLushort* linesIndices = new GLushort[N_CELLS * N_CELLS * 10];
 	generateLinesIndices(linesIndices, N_CELLS);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[2]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof linesIndices, linesIndices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort) * N_CELLS * N_CELLS * 10, linesIndices, GL_STATIC_DRAW);
 	return 1;
 }
 
@@ -178,8 +178,8 @@ void logic() {
 
 void mainLoop(GLFWwindow* window) {
 	do {
-		//glClearColor(1.0, 1.0, 1.0, 1.0);
-		glClearColor(0.0, 0.0, 0.0, 1.0);
+		glClearColor(1.0, 1.0, 1.0, 1.0);
+		//glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		logic();
 		render(window);

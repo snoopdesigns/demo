@@ -14,8 +14,16 @@ varying vec3 ldir_c;
 varying vec3 lpos_w;
 varying vec3 tex_color;
 
-float random(vec2 p) {
-    return texture2D(randtexture, p).r;
+float ts = 1.0; //terrain scale, q[2].w
+vec3 campos = camerapos; // camera position q[4].xyz
+float waterplane = 0.0; // waterplane q[1].w
+float season = 64.0; // season param, q[2].x
+
+float random(vec2 p, float m, float n) {
+	//p = abs(p);
+    p = (floor(p)+vec2(m,n))/256;
+	float r01 = texture2D(randtexture, p).r; 
+    return r01 * 2.0 - 1.0;
 }
 
 // Noise calculation + derivatives
@@ -23,14 +31,15 @@ vec3 no(vec2 p)
 {
     vec2 f=p-floor(p);
     vec2 u=f*f*f*(f*(f*6-15)+10);
-    float a=random((floor(p)+vec2(0,0))/256);
-    float b=random((floor(p)+vec2(1,0))/256);
-    float c=random((floor(p)+vec2(0,1))/256);
-    float d=random((floor(p)+vec2(1,1))/256);
+	float a=random(p, 0.0, 0.0);
+    float b=random(p, 1.0, 0.0);
+    float c=random(p, 0.0, 1.0);
+    float d=random(p, 1.0, 1.0);
     return vec3(a+(b-a)*u.x+(c-a)*u.y+(a-b-c+d)*u.x*u.y,30*f*f*(f*(f-2)+1)*(vec2(b-a,c-a)+(a-b-c+d)*u.yx));
 }
 
 // Terrain height computation
+// Generated value is between 0.0 and 6.0
 float f(vec2 p,float o)
 {
     vec2 d = vec2(0.0,0.0);
@@ -47,32 +56,14 @@ float f(vec2 p,float o)
     return a;
 }
 
-vec3 b(vec3 p) {
-    float r=f(666*p.xz, 2);
-    vec3 c=vec3(0.85,0.85,0.85)*(.8+.2*r);
-    return c;
-}
-
 void main(void) {
 	//vec3 normal = gl_Normal.xyz;
-	vpos_m = vec3(coord2d, f(coord2d, 8));
+	
+	vpos_m = vec3(0.0,0.0,0.0);
+	vpos_m.xy = coord2d;
+	vpos_m.z = ts * f(vpos_m.xy, 8);
+	//vpos_m.z = 0.0;
+	// mvp * 
 	gl_Position = mvp * vec4(vpos_m, 1);
-	tex_color = b(vpos_m);//vec3(0.84,0.84,0.84);
-	
-	// Position of the vertex, in worldspace : M * position
-	vpos_w = (m * vec4(vpos_m,1)).xyz;
-	
-	lpos_w = vec3(50,50,50);
-	
-	// Vector that goes from the vertex to the camera, in camera space.
-	// In camera space, the camera is at the origin (0,0,0).
-	vec3 vpos_c = (v * m * vec4(vpos_m,1)).xyz;
-	eye_c = vec3(0,0,0) - vpos_c;
-
-	// Vector that goes from the vertex to the light, in camera space. M is ommited because it's identity.
-	vec3 lpos_c = (v * vec4(lpos_w,1)).xyz;
-	ldir_c = lpos_c + eye_c;
-	
-	// Normal of the the vertex, in camera space
-	normal_c = (v * m * vec4(gl_Normal.xyz,0)).xyz;
+	tex_color = vec3(0.84,0.84,0.84);
 }
