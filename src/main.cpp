@@ -178,7 +178,8 @@ void logic() {
 
 void mainLoop(GLFWwindow* window) {
 	do {
-		glClearColor(1.0, 1.0, 1.0, 1.0);
+		glClearColor(0.55,0.65,0.75,1.0);
+		//glClearColor(1.0, 1.0, 1.0, 1.0);
 		//glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		logic();

@@ -1,11 +1,6 @@
 uniform int line_flag;
 
 varying vec3 vpos_m;
-varying vec3 vpos_w;
-varying vec3 normal_c;
-varying vec3 eye_c;
-varying vec3 ldir_c;
-varying vec3 lpos_w;
 varying vec3 tex_color;
 
 void main(void){
