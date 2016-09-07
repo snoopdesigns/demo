@@ -49,8 +49,8 @@ void generateVerticesMesh(glm::vec2* vertices, int size, int scale) {
 	
 	for (int i = 0; i < size; i++) {
 		for (int j = 0; j < size; j++) {
-			vertices[i*size+j].x = (-1.0 * scale) + j * ratio_x;
-			vertices[i*size+j].y = (1.0 * scale) - i * ratio_y;
+			vertices[i*size+j].x = -1.0 + j * ratio_x;
+			vertices[i*size+j].y = 1.0 - i * ratio_y;
 			if(DEBUG) gl_log("Vertex generated: [%f, %f]\n", vertices[i*size+j].x, vertices[i*size+j].y);
 		}
 	}

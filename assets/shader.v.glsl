@@ -87,10 +87,19 @@ vec3 b(vec3 p,vec3 c,vec3 d)
     }	
 	
 vec3 c(vec3 p) {
-    float t=length(p.xyz-campos);
-	vec3 c = vec3(0.84,0.84,0.84);
-	vec3 n=cn(p.xy,.001*t,12-log2(t));
-	c*=b(p,n,cn(p.xy,.001*t,5));
+    float t = length(p.xyz-campos);
+	vec3 n = cn(p.xy,.001*t,12-log2(t));
+	//vec3 c = vec3(0.84,0.84,0.84);
+	float h = f(3*p.xy,3);
+	float r = no(666*p.xy)[0];
+	vec3 c = (.1+.75*season)*(.8+.2*vec3(r,r,r));
+	c = lerp(c,lerp(vec3(.8,.85,.9),vec3(.45,.45,.2)*(.8+.2*r),season),smoothstep(.5-.8*n.y,1-1.1*n.y,h*.15));
+	//c = lerp(c,lerp(vec3(.37,.23,.08),vec3(.42,.4,.2),season)*(.5+.5*r),smoothstep(0,1,50*(n.y-1)+(h+season)/.4));
+	c *= b(p,n,cn(p.xy,.001*t,5));
+	// FOG
+	c *= exp(-.042*t);
+	// Light scattering
+	//c+=(1-exp(-.1*t))*(vec3(.52,.59,.65)+pow(saturate(mul(e,sundir)),8)*vec3(.6,.4,.1));
 	return c;
 }
 
@@ -99,9 +108,10 @@ void main(void) {
 	
 	vpos_m = vec3(0.0,0.0,0.0);
 	vpos_m.xy = coord2d;
-	vpos_m.z = ts * f(vpos_m.xy, 8);
-	//vpos_m.z = 0.0;
-	// mvp * 
-	gl_Position = mvp * vec4(vpos_m, 1);
-	tex_color = c(vpos_m);
+	//vpos_m.z = ts * f(vpos_m.xy, 8);
+	vpos_m.z = 0.0;
+	// 
+	gl_Position =  mvp * vec4(vpos_m, 1);
+	tex_color = vec3(0.85,0.85,0.85);
+	//tex_color = c(vpos_m);
 }

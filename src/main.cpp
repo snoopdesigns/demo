@@ -28,12 +28,12 @@
 // Include GL headers
 #include <GL/gl.h>
 
-#define N_MESH 256 // Mesh size
-#define N_CELLS 255 // Cells size
-#define MESH_SCALE 4 // Mesh scale on [-1;1]
+#define N_MESH 5 // Mesh size
+#define N_CELLS 4 // Cells size
+#define MESH_SCALE 1 // Mesh scale on [-1;1]
 
 #define DRAW_POLYGON_LINES true
-#define DRAW_POLYGONS true
+#define DRAW_POLYGONS false
 
 // Shader program
 GLuint program;
@@ -54,8 +54,8 @@ GLuint texture_id;
 bool rotate = false;
 
 float camera_x = 0.0;
-float camera_y = - MESH_SCALE * 1.3;
-float camera_z = 1.0 + MESH_SCALE;
+float camera_y = - MESH_SCALE * 2.0;
+float camera_z = 2.0 * MESH_SCALE;
 float lookat_x = 0.0;
 float lookat_y = 0.0;
 float lookat_z = 0.0;
@@ -178,8 +178,8 @@ void logic() {
 
 void mainLoop(GLFWwindow* window) {
 	do {
-		glClearColor(0.55,0.65,0.75,1.0);
-		//glClearColor(1.0, 1.0, 1.0, 1.0);
+		//glClearColor(0.55,0.65,0.75,1.0); // blue
+		glClearColor(1.0, 1.0, 1.0, 1.0);
 		//glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		logic();
