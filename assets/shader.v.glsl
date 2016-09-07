@@ -5,6 +5,7 @@ uniform mat4 v;
 uniform mat4 mvp;
 uniform vec3 lightpos;
 uniform vec3 camerapos;
+uniform int sky_flag;
 
 varying vec3 vpos_m;
 varying vec3 tex_color;
@@ -108,15 +109,29 @@ vec3 c(vec3 p) {
 	return c;
 }
 
+vec3 c_sky(vec3 p) {
+	vec3 e = normalize(vec3(0,0,0) - (v * vec4(p, 1.0)).xyz);
+	//vec3 e=normalize(mul(v,vec4(p.x*2-1,-p.z*2+1,1,1))).xyz;
+	vec2 s=e.xz/e.y;
+    //float k=(2*s.y+1000)%8;
+	vec3 c=vec3(.55,.65,.75)+.1*f(p.xz*.2,10);
+    return c;
+}
+
 void main(void) {
 	//vec3 normal = gl_Normal.xyz;
-	
-	vpos_m = vec3(0.0,0.0,0.0);
-	vpos_m.xy = coord2d;
-	vpos_m.z = ts * f(vpos_m.xy, 8);
-	//vpos_m.z = 0.0;
-	// mvp * 
-	gl_Position = mvp * vec4(vpos_m, 1);
-	//tex_color = vec3(0.85,0.85,0.85);
-	tex_color = c(vpos_m);
+	if(sky_flag==0) {
+		vpos_m = vec3(0.0,0.0,0.0);
+		vpos_m.xy = coord2d;
+		vpos_m.z = ts * f(vpos_m.xy, 8);
+		//vpos_m.z = 0.0;
+		// mvp * 
+		gl_Position = mvp * vec4(vpos_m, 1);
+		//tex_color = vec3(0.85,0.85,0.85);
+		tex_color = c(vpos_m);
+	} else {
+		gl_Position = vec4(coord2d - 1.0, -2.0, 1.0);
+	    //gl_Position = mvp * vec4(coord2d.x, 15.0, coord2d.y, 1.0);
+	    tex_color = c_sky(vec3(coord2d.x, 15.0, coord2d.y));//vec3(0.85, 0.85, 1.0);
+	}
 }

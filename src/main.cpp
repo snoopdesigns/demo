@@ -28,7 +28,7 @@
 // Include GL headers
 #include <GL/gl.h>
 
-#define N_MESH 900 // Mesh size
+#define N_MESH 60 // Mesh size
 #define N_CELLS (N_MESH-1) // Cells size
 #define MESH_SCALE 7 // Mesh scale on [-1;1]
 
@@ -56,6 +56,7 @@ GLint uniform_v;
 GLint uniform_mvp;
 GLint uniform_camerapos;
 GLint uniform_line_flag;
+GLint uniform_sky_flag;
 
 GLuint texture_id;
 
@@ -71,6 +72,10 @@ float lookat_z = 2.0;
 #define LOOK_STEP 0.05
 
 // Mesh variables
+GLuint vbo_sky[1];
+GLuint vbo_sky_lines_index[1];
+GLuint vbo_sky_triangles_index[1];
+
 GLuint vbo_vertex[VERTEX_SEGMENT_LIMIT];
 GLuint vbo_triangles_index[VERTEX_SEGMENT_LIMIT];
 GLuint vbo_lines_index[VERTEX_SEGMENT_LIMIT];
@@ -88,6 +93,7 @@ int init_resources(void) {
 	uniform_v = get_uniform(program, "v");
 	uniform_mvp = get_uniform(program, "mvp");
 	uniform_line_flag = get_uniform(program, "line_flag");
+	uniform_sky_flag = get_uniform(program, "sky_flag");
 	uniform_camerapos = get_uniform(program, "camerapos");
 	uniform_randtexture = get_uniform(program, "randtexture");
 	
@@ -104,6 +110,10 @@ int init_resources(void) {
 	glGenBuffers(VERTEX_SEGMENT_LIMIT, vbo_vertex);
 	glGenBuffers(VERTEX_SEGMENT_LIMIT, vbo_triangles_index);
 	glGenBuffers(VERTEX_SEGMENT_LIMIT, vbo_lines_index);
+	
+	glGenBuffers(1, vbo_sky);
+	glGenBuffers(1, vbo_sky_lines_index);
+	glGenBuffers(1, vbo_sky_triangles_index);
 
 	// Create an array for vertices
 	glm::vec2* vertices = new glm::vec2[N_MESH*N_MESH];
@@ -129,6 +139,26 @@ int init_resources(void) {
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_lines_index[segment_i]);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort) * (segment_sizes[segment_i]-1) * N_CELLS * 10, linesIndices, GL_STATIC_DRAW);
 	}
+	
+	// Sky mesh generation
+	#define N_SKY 200
+	#define N_SKY_CELLS (N_SKY-1)
+	glm::vec2* skyVertices = new glm::vec2[N_SKY*N_SKY];
+	generateVerticesMesh(skyVertices, N_SKY, 1, STRATEGY_Q1);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_sky[0]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * N_SKY*N_SKY, skyVertices, GL_STATIC_DRAW);
+	
+	GLushort* sky_tr_indices;
+	GLushort* sky_line_indices;
+	sky_tr_indices = new GLushort[N_SKY_CELLS * N_SKY_CELLS * 6];
+	generateTrianglesIndices(sky_tr_indices, N_SKY_CELLS,N_SKY_CELLS);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_sky_triangles_index[0]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort) * N_SKY_CELLS * N_SKY_CELLS * 6, sky_tr_indices, GL_STATIC_DRAW);
+		
+	sky_line_indices = new GLushort[N_SKY_CELLS * N_SKY_CELLS * 10];
+	generateLinesIndices(sky_line_indices, N_SKY_CELLS, N_SKY_CELLS);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_sky_lines_index[0]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort) * N_SKY_CELLS * N_SKY_CELLS * 10, sky_line_indices, GL_STATIC_DRAW);
 	return 1;
 }
 
@@ -141,6 +171,18 @@ void render(GLFWwindow* window) {
 	
 	glUniform3f(uniform_camerapos, camera_x, camera_y, camera_z);
 	glEnableVertexAttribArray(attribute_coord2d);
+	
+	glUniform1i(uniform_sky_flag, 1);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_sky[0]);
+	glVertexAttribPointer(attribute_coord2d, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_sky_triangles_index[0]);
+	//glDrawElements(GL_TRIANGLES, N_SKY_CELLS * N_SKY_CELLS * 6, GL_UNSIGNED_SHORT, 0);
+	
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_sky_lines_index[0]);
+	glDrawElements(GL_LINES, N_SKY_CELLS * N_SKY_CELLS * 10, GL_UNSIGNED_SHORT, 0);
+	glUniform1i(uniform_sky_flag, 0);
+	
 	for(int segment_i = 0; segment_i < num_segments; segment_i++){
 		glBindBuffer(GL_ARRAY_BUFFER, vbo_vertex[segment_i]);
 		glVertexAttribPointer(attribute_coord2d, 2, GL_FLOAT, GL_FALSE, 0, 0);
@@ -156,6 +198,7 @@ void render(GLFWwindow* window) {
 			glDrawElements(GL_LINES, (segment_sizes[segment_i]-1) * N_CELLS * 10, GL_UNSIGNED_SHORT, 0);
 		}
 	}
+			
 	/* Stop using the vertex buffer object */
 	glDisableVertexAttribArray(attribute_coord2d);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -164,6 +207,8 @@ void render(GLFWwindow* window) {
 
 void free_resources() {
   glDeleteProgram(program);
+  glDeleteBuffers(1, &vbo_sky[0]);
+  glDeleteBuffers(1, &vbo_sky_lines_index[0]);
   for(int i = 0;i < VERTEX_SEGMENT_LIMIT; i++) {
 	glDeleteBuffers(1, &vbo_vertex[i]);
 	glDeleteBuffers(1, &vbo_triangles_index[i]);
