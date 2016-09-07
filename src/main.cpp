@@ -30,7 +30,7 @@
 
 #define N_MESH 256 // Mesh size
 #define N_CELLS 255 // Cells size
-#define MESH_SCALE 20 // Mesh scale on [-1;1]
+#define MESH_SCALE 4 // Mesh scale on [-1;1]
 
 #define DRAW_POLYGON_LINES true
 #define DRAW_POLYGONS true
@@ -54,7 +54,7 @@ GLuint texture_id;
 bool rotate = false;
 
 float camera_x = 0.0;
-float camera_y = -15.0 - MESH_SCALE;
+float camera_y = - MESH_SCALE * 1.3;
 float camera_z = 1.0 + MESH_SCALE;
 float lookat_x = 0.0;
 float lookat_y = 0.0;
