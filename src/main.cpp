@@ -28,9 +28,12 @@
 // Include GL headers
 #include <GL/gl.h>
 
-#define N_MESH 5 // Mesh size
-#define N_CELLS 4 // Cells size
+#define N_MESH 100 // Mesh size
+#define N_CELLS 199 // Cells size
 #define MESH_SCALE 1 // Mesh scale on [-1;1]
+
+#define VERTEX_SEGMENT_LIMIT 10
+#define VERTEX_SEGMENT_SIZE_LIMIT 8000
 
 #define DRAW_POLYGON_LINES true
 #define DRAW_POLYGONS false
@@ -62,12 +65,12 @@ float lookat_z = 0.0;
 #define CAMERA_STEP 0.05
 #define LOOK_STEP 0.05
 
-/*
-  * 1st index is mesh vertices
-  * 2nd index is vertices triangles indexes
-  * 3rd index is lines indexes
-*/
-GLuint vbo[3];
+// Mesh variables
+GLuint vbo_vertex[VERTEX_SEGMENT_LIMIT];
+GLuint vbo_triangles_index[VERTEX_SEGMENT_LIMIT];
+GLuint vbo_lines_index[VERTEX_SEGMENT_LIMIT];
+int num_segments;
+int* segment_sizes = new int[VERTEX_SEGMENT_LIMIT];
 
 int init_resources(void) {
 
@@ -93,25 +96,35 @@ int init_resources(void) {
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, N, N, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, graph);
 
 	// Create three vertex buffer objects
-	glGenBuffers(3, vbo);
+	glGenBuffers(VERTEX_SEGMENT_LIMIT, vbo_vertex);
+	glGenBuffers(VERTEX_SEGMENT_LIMIT, vbo_triangles_index);
+	glGenBuffers(VERTEX_SEGMENT_LIMIT, vbo_lines_index);
 
 	// Create an array for vertices
 	glm::vec2* vertices = new glm::vec2[N_MESH*N_MESH];
+	glm::vec2* verticesSplitted = new glm::vec2[VERTEX_SEGMENT_SIZE_LIMIT*VERTEX_SEGMENT_LIMIT];
 	generateVerticesMesh(vertices, N_MESH, MESH_SCALE);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * N_MESH*N_MESH, vertices, GL_STATIC_DRAW);
+	num_segments = splitVerticesMesh(vertices, N_MESH, VERTEX_SEGMENT_SIZE_LIMIT, verticesSplitted, segment_sizes);
+	for(int segment_i = 0; segment_i < num_segments; segment_i++){
+		glBindBuffer(GL_ARRAY_BUFFER, vbo_vertex[segment_i]);
+		gl_log("Binding vertexes segment: %d, size: %d", segment_i, segment_sizes[segment_i]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * (segment_sizes[segment_i])*N_MESH, &verticesSplitted[segment_i*VERTEX_SEGMENT_SIZE_LIMIT], GL_STATIC_DRAW);
+	}
 	
 	// Create and array for triangle indices
-	GLushort* indices = new GLushort[N_CELLS * N_CELLS * 6];
+	/*GLushort* indices = new GLushort[N_CELLS * N_CELLS * 6];
 	generateTrianglesIndices(indices, N_CELLS);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[1]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort) * N_CELLS * N_CELLS * 6, indices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort) * N_CELLS * N_CELLS * 6, indices, GL_STATIC_DRAW);*/
 	
 	// Create and array for triangle lines indices
-	GLushort* linesIndices = new GLushort[N_CELLS * N_CELLS * 10];
-	generateLinesIndices(linesIndices, N_CELLS);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[2]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort) * N_CELLS * N_CELLS * 10, linesIndices, GL_STATIC_DRAW);
+	GLushort* linesIndices;
+	for(int segment_i = 0; segment_i < num_segments; segment_i++){
+		linesIndices = new GLushort[(segment_sizes[segment_i]-1) * N_CELLS * 10];
+		generateLinesIndices(linesIndices, N_CELLS, (segment_sizes[segment_i]-1));
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_lines_index[segment_i]);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort) * (segment_sizes[segment_i]-1) * N_CELLS * 10, linesIndices, GL_STATIC_DRAW);
+	}
 	return 1;
 }
 
@@ -123,22 +136,22 @@ void render(GLFWwindow* window) {
 	glUniform1i(uniform_line_flag, 0);
 	
 	glUniform3f(uniform_camerapos, camera_x, camera_y, camera_z);
-	
 	glEnableVertexAttribArray(attribute_coord2d);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-	glVertexAttribPointer(attribute_coord2d, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-	if (DRAW_POLYGONS) {
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[1]);
-		glDrawElements(GL_TRIANGLES, N_CELLS * N_CELLS * 6, GL_UNSIGNED_SHORT, 0);
+	for(int segment_i = 0; segment_i < num_segments; segment_i++){
+		glBindBuffer(GL_ARRAY_BUFFER, vbo_vertex[segment_i]);
+		glVertexAttribPointer(attribute_coord2d, 2, GL_FLOAT, GL_FALSE, 0, 0);
+		
+		if (DRAW_POLYGONS) {
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_triangles_index[1]);
+			glDrawElements(GL_TRIANGLES, N_CELLS * N_CELLS * 6, GL_UNSIGNED_SHORT, 0);
+		}
+		
+		if (DRAW_POLYGON_LINES) {
+			glUniform1i(uniform_line_flag, 1);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_lines_index[segment_i]);
+			glDrawElements(GL_LINES, (segment_sizes[segment_i]-1) * N_CELLS * 10, GL_UNSIGNED_SHORT, 0);
+		}
 	}
-	
-	if (DRAW_POLYGON_LINES) {
-		glUniform1i(uniform_line_flag, 1);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[2]);
-		glDrawElements(GL_LINES, N_CELLS * N_CELLS * 10, GL_UNSIGNED_SHORT, 0);
-	}
-
 	/* Stop using the vertex buffer object */
 	glDisableVertexAttribArray(attribute_coord2d);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -147,9 +160,12 @@ void render(GLFWwindow* window) {
 
 void free_resources() {
   glDeleteProgram(program);
-  glDeleteBuffers(1, &vbo[0]);
-  glDeleteBuffers(1, &vbo[1]);
-  glDeleteBuffers(1, &vbo[2]);
+  for(int i = 0;i < VERTEX_SEGMENT_LIMIT; i++) {
+	glDeleteBuffers(1, &vbo_vertex[i]);
+	glDeleteBuffers(1, &vbo_triangles_index[i]);
+	glDeleteBuffers(1, &vbo_lines_index[i]);
+  }
+  
 }
 
 void logic() {

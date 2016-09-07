@@ -33,11 +33,30 @@ char* read_from_file(const char *filename)
     return result;
 }
 
+void printVerticesArray(glm::vec2* array, int sizex, int sizey) {
+	gl_log("sizex = %d, sizey = %d\n", sizex, sizey);
+	for(int i=0;i<sizex;i++) {
+		for(int j=0;j<sizey;j++) {
+		    gl_log("Vertex [%d, %d] : [%f, %f]\n", i, j, array[i*sizey+j].x, array[i*sizey+j].y);
+		}
+	}
+}
+
+void printLineIndicesArray(GLushort* array, int sizex, int sizey) {
+	gl_log("LINEINDICE sizex = %d, sizey = %d\n", sizex, sizey);
+	for(int i=0;i<sizex;i++) {
+		for(int j=0;j<sizey;j++) {
+		    gl_log("Line [%d, %d] : [%d]\n", i, j, array[i*sizey+j]);
+		}
+		gl_log("Next row\n");
+	}
+}
+
 void generateTexture(GLbyte* graph, int size) {
 	for (int i = 0; i < size; i++) {
 		for (int j = 0; j < size; j++) {
 			graph[i*size+j] = roundf((float)rand()/(float)(RAND_MAX) * 127 + 128);
-			//printf("%f ", roundf((float)rand()/(float)(RAND_MAX) * 127 + 128));
+			if(DEBUG) gl_log("Generated texture value: %f\n", roundf((float)rand()/(float)(RAND_MAX) * 127 + 128));
 		}
 	}
 }
@@ -56,16 +75,35 @@ void generateVerticesMesh(glm::vec2* vertices, int size, int scale) {
 	}
 }
 
-glm::vec3 calculateSurfaceNormal(glm::vec2 p1, glm::vec2 p2, glm::vec2 p3) {
-	glm::vec3 normal = glm::vec3(0.0f);
-	glm::vec2 U = p2 - p1;
-	glm::vec2 V = p3 - p1;
-
-	normal[0] = (U[1] * V[2]) - (U[2] * V[1]);
-	normal[1] = (U[2] * V[0]) - (U[0] * V[2]);
-	normal[2] = (U[0] * V[1]) - (U[1] * V[0]);
-
-	return normal;
+int splitVerticesMesh(glm::vec2* vertices, int size, int maxSegmentSize, glm::vec2* result,int* segmentSizes) {
+	int num = 0;
+	int currentSegment = 0;
+    for (int i = 0; i < size; i++) {
+		for (int j = 0; j < size; j++) {
+			result[currentSegment * maxSegmentSize + num].x = vertices[i*size+j].x;
+			result[currentSegment * maxSegmentSize + num].y = vertices[i*size+j].y;
+			if(DEBUG) gl_log("Adding elem [%d, %d] to index: [%d, %d]. Elem value: [%f, %f]\n", i, j, currentSegment, num,vertices[i*size+j].x,vertices[i*size+j].y);
+		    num++;
+			if(j==size-1) {
+			    if(num + size > maxSegmentSize) {
+				    /*if(DEBUG)*/ gl_log("Number of vertices in segment %d: %d. Size of mesh: %d. Rows in segment: %d\n", currentSegment, num, size, num/size);
+					//if(num==size) break;
+					segmentSizes[currentSegment] = num/size;
+					if(num/size<=1) {printf("Wrong config: size of segment must be > 1!\n"); exit(0);}
+				    currentSegment ++;
+					num = 0;
+					i--;
+					/*if(DEBUG)*/ gl_log("Starting new segment\n");
+				}
+			}
+		}
+	}
+	segmentSizes[currentSegment] = num/size;
+	if(num/size<=1) {printf("Wrong config: size of segment must be > 1!\n"); exit(0);}
+	if(segmentSizes[currentSegment]==1) currentSegment--;
+	/*if(DEBUG)*/ gl_log("Number of vertices in segment %d: %d. Size of mesh: %d. Rows in segment: %d\n", currentSegment, num, size, num/size);
+	/*if(DEBUG)*/ gl_log("Total segments: %d\n", currentSegment+1);
+	return currentSegment+1;
 }
 
 void generateTrianglesIndices(GLushort* indices, int size) {
@@ -83,20 +121,20 @@ void generateTrianglesIndices(GLushort* indices, int size) {
 	}
 }
 
-void generateLinesIndices(GLushort* indices, int size) {
+void generateLinesIndices(GLushort* indices, int sizex, int sizey) {
     unsigned long i = 0;
-	for (int x = 0; x < size; x++) {
-		for (int y = 0; y < size; y++) {
-			indices[i++] = x * (size+1) + y;
-			indices[i++] = (x + 1) * (size+1) + y;
-			indices[i++] = (x + 1) * (size+1) + y;
-			indices[i++] = (x + 1) * (size+1) + y + 1;
-			indices[i++] = (x + 1) * (size+1) + y + 1;
-			indices[i++] = x * (size+1) + y + 1;
-			indices[i++] = x * (size+1) + y + 1;
-			indices[i++] = x * (size+1) + y;
-			indices[i++] = x * (size+1) + y;
-			indices[i++] = (x + 1) * (size+1) + y + 1;
+	for (int y = 0; y < sizey; y++) {
+		for (int x = 0; x < sizex; x++) {
+			indices[i++] = y * (sizex+1) + x;
+			indices[i++] = (y + 1) * (sizex+1) + x;
+			indices[i++] = (y + 1) * (sizex+1) + x;
+			indices[i++] = (y + 1) * (sizex+1) + x + 1;
+			indices[i++] = (y + 1) * (sizex+1) + x + 1;
+			indices[i++] = y * (sizex+1) + x + 1;
+			indices[i++] = y * (sizex+1) + x + 1;
+			indices[i++] = y * (sizex+1) + x;
+			indices[i++] = y * (sizex+1) + x;
+			indices[i++] = (y + 1) * (sizex+1) + x + 1;
 			if(DEBUG) gl_log("Line index: [%d,%d,%d,%d,%d,%d,%d,%d,%d,%d]\n", indices[i-10],indices[i-9],indices[i-8],indices[i-7],indices[i-6],indices[i-5],indices[i-4],indices[i-3],indices[i-2],indices[i-1]);
 		}
 	}
