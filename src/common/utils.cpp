@@ -61,15 +61,20 @@ void generateTexture(GLbyte* graph, int size) {
 	}
 }
 
-void generateVerticesMesh(glm::vec2* vertices, int size, int scale) {
+void generateVerticesMesh(glm::vec2* vertices, int size, int scale, int strategy) {
 	float ratio_x = (2.0 * scale) / (size-1);
 	float ratio_y = (2.0 * scale) / (size-1);
 	
 	
 	for (int i = 0; i < size; i++) {
 		for (int j = 0; j < size; j++) {
-			vertices[i*size+j].x = (-1.0*scale) + j * ratio_x;
-			vertices[i*size+j].y = (1.0*scale) - i * ratio_y;
+			if(strategy == 0) {
+				vertices[i*size+j].x = (-1.0*scale) + j * ratio_x;
+				vertices[i*size+j].y = (1.0*scale) - i * ratio_y;
+			} else {
+				vertices[i*size+j].x = j * ratio_x;
+				vertices[i*size+j].y = i * ratio_y;
+			}
 			if(DEBUG) gl_log("Vertex generated: [%f, %f]\n", vertices[i*size+j].x, vertices[i*size+j].y);
 		}
 	}

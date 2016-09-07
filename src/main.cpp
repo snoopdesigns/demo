@@ -28,15 +28,20 @@
 // Include GL headers
 #include <GL/gl.h>
 
-#define N_MESH 200 // Mesh size
+#define N_MESH 900 // Mesh size
 #define N_CELLS (N_MESH-1) // Cells size
-#define MESH_SCALE 5 // Mesh scale on [-1;1]
+#define MESH_SCALE 7 // Mesh scale on [-1;1]
 
 #define VERTEX_SEGMENT_LIMIT 15
 #define VERTEX_SEGMENT_SIZE_LIMIT 256*256
 
 #define DRAW_POLYGON_LINES false
 #define DRAW_POLYGONS true
+
+#define STRATEGY_CENTER 0
+#define STRATEGY_Q1 1
+
+#define MESH_GENERATION_STRATEGY STRATEGY_Q1
 
 // Shader program
 GLuint program;
@@ -56,11 +61,11 @@ GLuint texture_id;
 
 bool rotate = false;
 
-float camera_x = 0.0;
-float camera_y = - MESH_SCALE * 1.4;
-float camera_z = 0.9 * MESH_SCALE;
-float lookat_x = 0.0;
-float lookat_y = 0.0;
+float camera_x = 5.750006;
+float camera_y = -2.349980;
+float camera_z = 4.899995;
+float lookat_x = MESH_SCALE/2.0;
+float lookat_y = MESH_SCALE/2.0;
 float lookat_z = 2.0;
 #define CAMERA_STEP 0.05
 #define LOOK_STEP 0.05
@@ -103,7 +108,7 @@ int init_resources(void) {
 	// Create an array for vertices
 	glm::vec2* vertices = new glm::vec2[N_MESH*N_MESH];
 	glm::vec2* verticesSplitted = new glm::vec2[VERTEX_SEGMENT_SIZE_LIMIT*VERTEX_SEGMENT_LIMIT];
-	generateVerticesMesh(vertices, N_MESH, MESH_SCALE);
+	generateVerticesMesh(vertices, N_MESH, MESH_SCALE, MESH_GENERATION_STRATEGY);
 	num_segments = splitVerticesMesh(vertices, N_MESH, VERTEX_SEGMENT_SIZE_LIMIT, verticesSplitted, segment_sizes);
 	GLushort* indices;
 	GLushort* linesIndices;
@@ -249,6 +254,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 				lookat_y += -1.0 * LOOK_STEP;
 				break;
 		}
+		//gl_log("campos[%f, %f, %f], camlooat[%f, %f, %f,]", camera_x, camera_y, camera_z, lookat_x, lookat_y, lookat_z);
 	}
 }
 

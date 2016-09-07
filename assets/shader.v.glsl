@@ -12,11 +12,12 @@ varying vec3 tex_color;
 float ts = 0.7; //terrain scale, q[2].w
 vec3 campos = camerapos; // camera position q[4].xyz
 float waterplane = 0.0; // waterplane q[1].w
-float season = 128.0/256.0; // season param, q[2].x
+float season = 0.0/256.0; // season param, q[2].x
 vec3 sundir = vec3(-0.9,0.31,-0.29); // sun direction, q[3]
+float brightness = 180.0/256.0; // brightness, q[2].y
+float contrast = 170.0/256.0; // contrast, q[2].z
 
 float random(vec2 p, float m, float n) {
-	//p = abs(p);
     p = (floor(p)+vec2(m,n))/256;
 	float r01 = texture2D(randtexture, p).r; 
     return r01 * 2.0 - 1.0;
@@ -89,7 +90,6 @@ vec3 b(vec3 p,vec3 c,vec3 d)
 vec3 c(vec3 p) {
     float t = length(p.xyz-campos);
 	vec3 n = cn(p.xy,.001*t,12-log2(t));
-	//vec3 c = vec3(0.84,0.84,0.84);
 	float h = f(3*p.xy,3);
 	float r = no(666*p.xy)[0];
 	vec3 c = (.1+.75*season)*(.8+.2*vec3(r,r,r));
@@ -100,6 +100,11 @@ vec3 c(vec3 p) {
 	c *= exp(-.042*t);
 	// Light scattering
 	//c+=(1-exp(-.1*t))*(vec3(.52,.59,.65)+pow(saturate(mul(e,sundir)),8)*vec3(.6,.4,.1));
+	
+	// tonemap
+	c *= pow(c,vec3(.45,.45,.45))*contrast+brightness;
+    // color ink
+    c.xz*=.98;
 	return c;
 }
 
