@@ -108,10 +108,10 @@ void main(void) {
 	
 	vpos_m = vec3(0.0,0.0,0.0);
 	vpos_m.xy = coord2d;
-	//vpos_m.z = ts * f(vpos_m.xy, 8);
-	vpos_m.z = 0.0;
+	vpos_m.z = ts * f(vpos_m.xy, 8);
+	//vpos_m.z = 0.0;
 	// mvp * 
-	gl_Position =  vec4(vpos_m, 1);
-	tex_color = vec3(0.85,0.85,0.85);
-	//tex_color = c(vpos_m);
+	gl_Position = mvp * vec4(vpos_m, 1);
+	//tex_color = vec3(0.85,0.85,0.85);
+	tex_color = c(vpos_m);
 }

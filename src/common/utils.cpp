@@ -68,15 +68,15 @@ void generateVerticesMesh(glm::vec2* vertices, int size, int scale) {
 	
 	for (int i = 0; i < size; i++) {
 		for (int j = 0; j < size; j++) {
-			vertices[i*size+j].x = -1.0 + j * ratio_x;
-			vertices[i*size+j].y = 1.0 - i * ratio_y;
+			vertices[i*size+j].x = (-1.0*scale) + j * ratio_x;
+			vertices[i*size+j].y = (1.0*scale) - i * ratio_y;
 			if(DEBUG) gl_log("Vertex generated: [%f, %f]\n", vertices[i*size+j].x, vertices[i*size+j].y);
 		}
 	}
 }
 
 int splitVerticesMesh(glm::vec2* vertices, int size, int maxSegmentSize, glm::vec2* result,int* segmentSizes) {
-	int num = 0;
+	long num = 0;
 	int currentSegment = 0;
     for (int i = 0; i < size; i++) {
 		for (int j = 0; j < size; j++) {
@@ -86,14 +86,13 @@ int splitVerticesMesh(glm::vec2* vertices, int size, int maxSegmentSize, glm::ve
 		    num++;
 			if(j==size-1) {
 			    if(num + size > maxSegmentSize) {
-				    /*if(DEBUG)*/ gl_log("Number of vertices in segment %d: %d. Size of mesh: %d. Rows in segment: %d\n", currentSegment, num, size, num/size);
-					//if(num==size) break;
+				    if(DEBUG) gl_log("Number of vertices in segment %d: %d. Size of mesh: %d. Rows in segment: %d\n", currentSegment, num, size, num/size);
 					segmentSizes[currentSegment] = num/size;
 					if(num/size<=1) {printf("Wrong config: size of segment must be > 1!\n"); exit(0);}
 				    currentSegment ++;
 					num = 0;
 					i--;
-					/*if(DEBUG)*/ gl_log("Starting new segment\n");
+					if(DEBUG) gl_log("Starting new segment\n");
 				}
 			}
 		}
@@ -101,21 +100,21 @@ int splitVerticesMesh(glm::vec2* vertices, int size, int maxSegmentSize, glm::ve
 	segmentSizes[currentSegment] = num/size;
 	if(num/size<=1) {printf("Wrong config: size of segment must be > 1!\n"); exit(0);}
 	if(segmentSizes[currentSegment]==1) currentSegment--;
-	/*if(DEBUG)*/ gl_log("Number of vertices in segment %d: %d. Size of mesh: %d. Rows in segment: %d\n", currentSegment, num, size, num/size);
-	/*if(DEBUG)*/ gl_log("Total segments: %d\n", currentSegment+1);
+	if(DEBUG) gl_log("Number of vertices in segment %d: %d. Size of mesh: %d. Rows in segment: %d\n", currentSegment, num, size, num/size);
+	if(DEBUG) gl_log("Total segments: %d\n", currentSegment+1);
 	return currentSegment+1;
 }
 
-void generateTrianglesIndices(GLushort* indices, int size) {
+void generateTrianglesIndices(GLushort* indices, int sizex, int sizey) {
     unsigned long i = 0;
-	for (int x = 0; x < size; x++) {
-		for (int y = 0; y < size; y++) {
-			indices[i++] = x * (size + 1) + y;
-			indices[i++] = (x + 1) * (size + 1) + y;
-			indices[i++] = (x + 1) * (size + 1) + y + 1;
-			indices[i++] = (x + 1) * (size + 1) + y + 1;
-			indices[i++] = x * (size + 1) + y + 1;
-			indices[i++] = x * (size + 1) + y;
+	for (int y = 0; y < sizey; y++) {
+		for (int x = 0; x < sizex; x++) {
+			indices[i++] = y * (sizex + 1) + x;
+			indices[i++] = (y + 1) * (sizex + 1) + x;
+			indices[i++] = (y + 1) * (sizex + 1) + x + 1;
+			indices[i++] = (y + 1) * (sizex + 1) + x + 1;
+			indices[i++] = y * (sizex + 1) + x + 1;
+			indices[i++] = y * (sizex + 1) + x;
 			if(DEBUG) gl_log("Triangle index: [%d,%d,%d,%d,%d,%d]\n", indices[i-6],indices[i-5],indices[i-4],indices[i-3],indices[i-2],indices[i-1]);
 		}
 	}
