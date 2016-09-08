@@ -1,14 +1,15 @@
 uniform int line_flag;
+uniform int pp_flag;
 
 varying vec3 vpos_m;
-varying vec3 tex_color;
+varying vec4 tex_color;
 
 void main(void){
-	vec3 baseColor;
+	vec4 baseColor;
     if (line_flag == 1) {
-	    baseColor = vec3(0.3,0.3,0.3);
+	    baseColor = vec4(0.3,0.3,0.3,1.0);
 	} else {
 	    baseColor = tex_color;
     }
-	gl_FragColor = vec4(baseColor,1.0);
+	gl_FragColor = baseColor;
 }

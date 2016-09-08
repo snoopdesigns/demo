@@ -41,6 +41,10 @@
 #define N_SKY_CELLS (N_SKY-1)
 #define N_SKY_SCALE (MESH_SCALE*4)
 
+// PP mesh size
+#define N_PP 200
+#define N_PP_CELLS (N_PP-1)
+
 #define VERTEX_SEGMENT_LIMIT 100
 #define VERTEX_SEGMENT_SIZE_LIMIT 256*256
 
@@ -65,14 +69,17 @@ GLint uniform_v;
 GLint uniform_p;
 GLint uniform_mvp;
 GLint uniform_mvp_sky;
+GLint uniform_mvp_pp;
 GLint uniform_camerapos;
 GLint uniform_line_flag;
 GLint uniform_sky_flag;
+GLint uniform_pp_flag;
 GLint uniform_scale;
 
 GLuint texture_id;
 
 bool rotate = false;
+bool apply_pp = true;
 
 #define DEBUG_CAMERA true
 float camera_x = -0.299998;
@@ -92,8 +99,10 @@ float lookat_z = 3.249999;*/
 
 // Mesh variables
 GLuint vbo_sky[1];
-GLuint vbo_sky_lines_index[1];
 GLuint vbo_sky_triangles_index[1];
+
+GLuint vbo_pp[1];
+GLuint vbo_pp_triangles_index[1];
 
 GLuint vbo_vertex[VERTEX_SEGMENT_LIMIT];
 GLuint vbo_triangles_index[VERTEX_SEGMENT_LIMIT];
@@ -113,8 +122,10 @@ int init_resources(void) {
 	uniform_p = get_uniform(program, "p");
 	uniform_mvp = get_uniform(program, "mvp");
 	uniform_mvp_sky = get_uniform(program, "mvp_sky");
+	uniform_mvp_pp = get_uniform(program, "mvp_pp");
 	uniform_line_flag = get_uniform(program, "line_flag");
 	uniform_sky_flag = get_uniform(program, "sky_flag");
+	uniform_pp_flag = get_uniform(program, "pp_flag");
 	uniform_camerapos = get_uniform(program, "camerapos");
 	uniform_randtexture = get_uniform(program, "randtexture");
 	uniform_scale = get_uniform(program, "scale");
@@ -134,8 +145,10 @@ int init_resources(void) {
 	glGenBuffers(VERTEX_SEGMENT_LIMIT, vbo_lines_index);
 	
 	glGenBuffers(1, vbo_sky);
-	glGenBuffers(1, vbo_sky_lines_index);
 	glGenBuffers(1, vbo_sky_triangles_index);
+	
+	glGenBuffers(1, vbo_pp);
+	glGenBuffers(1, vbo_pp_triangles_index);
 
 	// Create an array for vertices
 	glm::vec2* vertices = new glm::vec2[N_MESH*N_MESH];
@@ -167,18 +180,22 @@ int init_resources(void) {
 	generateVerticesMesh(skyVertices, N_SKY, N_SKY_SCALE, STRATEGY_CENTER);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo_sky[0]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * N_SKY*N_SKY, skyVertices, GL_STATIC_DRAW);
-	
 	GLushort* sky_tr_indices;
-	GLushort* sky_line_indices;
 	sky_tr_indices = new GLushort[N_SKY_CELLS * N_SKY_CELLS * 6];
 	generateTrianglesIndices(sky_tr_indices, N_SKY_CELLS,N_SKY_CELLS);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_sky_triangles_index[0]);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort) * N_SKY_CELLS * N_SKY_CELLS * 6, sky_tr_indices, GL_STATIC_DRAW);
-		
-	sky_line_indices = new GLushort[N_SKY_CELLS * N_SKY_CELLS * 10];
-	generateLinesIndices(sky_line_indices, N_SKY_CELLS, N_SKY_CELLS);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_sky_lines_index[0]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort) * N_SKY_CELLS * N_SKY_CELLS * 10, sky_line_indices, GL_STATIC_DRAW);
+	
+	// PP mesh generation
+	glm::vec2* ppVertices = new glm::vec2[N_PP*N_PP];
+	generateVerticesMesh(ppVertices, N_PP, 1, STRATEGY_CENTER);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_pp[0]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * N_PP*N_PP, ppVertices, GL_STATIC_DRAW);
+	GLushort* pp_tr_indices;
+	pp_tr_indices = new GLushort[N_PP_CELLS * N_PP_CELLS * 6];
+	generateTrianglesIndices(pp_tr_indices, N_PP_CELLS,N_PP_CELLS);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_pp_triangles_index[0]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort) * N_PP_CELLS * N_PP_CELLS * 6, pp_tr_indices, GL_STATIC_DRAW);
 	return 1;
 }
 
@@ -188,22 +205,22 @@ void render(GLFWwindow* window) {
 	
 	glUniform1i(uniform_randtexture, 0);
 	glUniform1i(uniform_line_flag, 0);
+	glUniform1i(uniform_sky_flag, 0);
+	glUniform1i(uniform_pp_flag, 0);
 	glUniform1i(uniform_scale, MESH_SCALE);
 	
 	glUniform3f(uniform_camerapos, camera_x, camera_y, camera_z);
 	glEnableVertexAttribArray(attribute_coord2d);
 	
+	// Sky drawing
 	glUniform1i(uniform_sky_flag, 1);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo_sky[0]);
 	glVertexAttribPointer(attribute_coord2d, 2, GL_FLOAT, GL_FALSE, 0, 0);
-	
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_sky_triangles_index[0]);
 	glDrawElements(GL_TRIANGLES, N_SKY_CELLS * N_SKY_CELLS * 6, GL_UNSIGNED_SHORT, 0);
-	
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_sky_lines_index[0]);
-	glDrawElements(GL_LINES, N_SKY_CELLS * N_SKY_CELLS * 10, GL_UNSIGNED_SHORT, 0);
 	glUniform1i(uniform_sky_flag, 0);
 	
+	// Terrain drawing
 	for(int segment_i = 0; segment_i < num_segments; segment_i++){
 		glBindBuffer(GL_ARRAY_BUFFER, vbo_vertex[segment_i]);
 		glVertexAttribPointer(attribute_coord2d, 2, GL_FLOAT, GL_FALSE, 0, 0);
@@ -219,6 +236,17 @@ void render(GLFWwindow* window) {
 			glDrawElements(GL_LINES, (segment_sizes[segment_i]-1) * N_CELLS * 10, GL_UNSIGNED_SHORT, 0);
 		}
 	}
+	
+	
+	// Posprocessing
+	if(apply_pp) {
+		glUniform1i(uniform_pp_flag, 1);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo_pp[0]);
+		glVertexAttribPointer(attribute_coord2d, 2, GL_FLOAT, GL_FALSE, 0, 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_pp_triangles_index[0]);
+		glDrawElements(GL_TRIANGLES, N_PP_CELLS * N_PP_CELLS * 6, GL_UNSIGNED_SHORT, 0);
+		glUniform1i(uniform_pp_flag, 0);
+	}
 			
 	/* Stop using the vertex buffer object */
 	glDisableVertexAttribArray(attribute_coord2d);
@@ -229,7 +257,9 @@ void render(GLFWwindow* window) {
 void free_resources() {
   glDeleteProgram(program);
   glDeleteBuffers(1, &vbo_sky[0]);
-  glDeleteBuffers(1, &vbo_sky_lines_index[0]);
+  glDeleteBuffers(1, &vbo_sky_triangles_index[0]);
+  glDeleteBuffers(1, &vbo_pp[0]);
+  glDeleteBuffers(1, &vbo_pp_triangles_index[0]);
   for(int i = 0;i < VERTEX_SEGMENT_LIMIT; i++) {
 	glDeleteBuffers(1, &vbo_vertex[i]);
 	glDeleteBuffers(1, &vbo_triangles_index[i]);
@@ -248,15 +278,18 @@ void logic() {
 	}
 	glm::mat4 view = glm::lookAt(glm::vec3(camera_x, camera_y, camera_z), glm::vec3(lookat_x, lookat_y, lookat_z), glm::vec3(0.0, 0.0, 1.0));
 	glm::mat4 view_sky = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.5f * MESH_SCALE), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0, 1.0, 0.0));
+	glm::mat4 view_pp = glm::lookAt(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0, 1.0, 0.0));
 	glm::mat4 projection = glm::perspective(45.0f, 1.0f * getMonitorWidth() / getMonitorHeight(), 0.01f, 500.0f);
 	glm::mat4 mvp = projection * view * model;
 	glm::mat4 mvp_sky = projection * view_sky * model;
+	glm::mat4 mvp_pp = projection * view_pp * model;
 	
 	glUniformMatrix4fv(uniform_m, 1, GL_FALSE, glm::value_ptr(model));
 	glUniformMatrix4fv(uniform_v, 1, GL_FALSE, glm::value_ptr(view));
 	glUniformMatrix4fv(uniform_p, 1, GL_FALSE, glm::value_ptr(projection));
 	glUniformMatrix4fv(uniform_mvp, 1, GL_FALSE, glm::value_ptr(mvp));
 	glUniformMatrix4fv(uniform_mvp_sky, 1, GL_FALSE, glm::value_ptr(mvp_sky));
+	glUniformMatrix4fv(uniform_mvp_pp, 1, GL_FALSE, glm::value_ptr(mvp_pp));
 	
 	/* Set texture wrapping mode */
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, false ? GL_CLAMP_TO_EDGE : GL_REPEAT);
@@ -286,7 +319,11 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 		switch (key) {
 			case GLFW_KEY_F3:
 				rotate = !rotate;
-				gl_log("Rotation is now %s\n", rotate ? "on" : "off");
+				printf("Rotation is now %s\n", rotate ? "on" : "off");
+				break;
+			case GLFW_KEY_F4:
+				apply_pp = !apply_pp;
+				printf("Posprocessing is now %s\n", rotate ? "on" : "off");
 				break;
 			case GLFW_KEY_UP:
 				camera_y += CAMERA_STEP;

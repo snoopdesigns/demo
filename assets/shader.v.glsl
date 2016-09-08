@@ -5,13 +5,15 @@ uniform mat4 v;
 uniform mat4 p;
 uniform mat4 mvp;
 uniform mat4 mvp_sky;
+uniform mat4 mvp_pp;
 uniform vec3 lightpos;
 uniform vec3 camerapos;
 uniform int sky_flag;
+uniform int pp_flag;
 uniform int scale;
 
 varying vec3 vpos_m;
-varying vec3 tex_color;
+varying vec4 tex_color;
 
 float ts = 200.0/256.0; //terrain scale, q[2].w
 vec3 campos = camerapos; // camera position q[4].xyz
@@ -119,12 +121,36 @@ vec3 c_sky(vec3 p) {
 	vec2 s=e.xz/e.y;
     //float k=(2*s.y+1000)%8;
 	vec3 c=vec3(.55,.65,.75)+.1*f(p.xz*.2,10);
+	c = c +.5*pow(1-e.y,8)
+        +pow(saturate(mul(e,sundir)),16)*vec3(.4,.3,.1);
     return c;
+}
+
+vec3 pow(vec3 v, float p) {
+    v.x = pow(v.x, p);
+	v.y = pow(v.y, p);
+	v.z = pow(v.z, p);
+	return v;
+}
+
+vec4 c_pp(vec2 p)
+{
+    //p = p + 1.0 / 2.0;
+	vec3 c = vec3(1.0, 1.0, 1.0);
+	c=pow(c,.45)*contrast+brightness;
+    // tonemap
+    c = pow(c,.45)*contrast+brightness;
+    // vigneting
+    c *= 1.0-(.4+9.6*p.x*p.y*(p.x)*(p.y));
+	c.x+=.1*random(p+=.1, 0, 1);
+    c.y+=.1*random(p+=.1, 0, 1);
+    c.z+=.1*random(p+=.1, 0, 1);
+    return vec4(c,0.25);
 }
 
 void main(void) {
 	//vec3 normal = gl_Normal.xyz;
-	if(sky_flag==0) {
+	if(sky_flag==0 && pp_flag==0) {
 		vpos_m = vec3(0.0,0.0,0.0);
 		vpos_m.xy = coord2d;
 		vpos_m.z = ts * f(vpos_m.xy, 6);
@@ -132,11 +158,16 @@ void main(void) {
 		// mvp * 
 		gl_Position = mvp * vec4(vpos_m, 1);
 		//tex_color = vec3(0.85,0.85,0.85);
-		tex_color = c(vpos_m);
-	} else {
+		tex_color = vec4(c(vpos_m), 1.0);
+	} else if(sky_flag != 0) {
 		gl_Position = mvp_sky * vec4(coord2d, 0.0, 1.0);
 	    //gl_Position = mvp * vec4(coord2d.x, 15.0, coord2d.y, 1.0);
-	    tex_color = c_sky(vec3(coord2d.x, 15.0, coord2d.y));
+	    tex_color = vec4(c_sky(vec3(coord2d.x, 15.0, coord2d.y)), 1.0);
 		//tex_color = vec3(0.412, 0.412, 0.412);
+	} else if(pp_flag != 0) {
+	    gl_Position = mvp_pp * vec4(coord2d, 0.0, 1.0);
+	    //tex_color = c_sky(vec3(coord2d.x, 15.0, coord2d.y));
+		//tex_color = vec4(0.712, 0.912, 0.412, 0.4);
+		tex_color = c_pp(coord2d);
 	}
 }
