@@ -28,11 +28,20 @@
 // Include GL headers
 #include <GL/gl.h>
 
-#define N_MESH 60 // Mesh size
+// Terrain mesh size
+#define L_RES 100
+#define M_RES 700
+#define H_RES 1500
+#define N_MESH M_RES // Mesh size
 #define N_CELLS (N_MESH-1) // Cells size
-#define MESH_SCALE 7 // Mesh scale on [-1;1]
+#define MESH_SCALE 5 // Mesh scale on [-1;1]
 
-#define VERTEX_SEGMENT_LIMIT 15
+// Sky mesh size
+#define N_SKY 200
+#define N_SKY_CELLS (N_SKY-1)
+#define N_SKY_SCALE (MESH_SCALE*4)
+
+#define VERTEX_SEGMENT_LIMIT 100
 #define VERTEX_SEGMENT_SIZE_LIMIT 256*256
 
 #define DRAW_POLYGON_LINES false
@@ -53,21 +62,31 @@ GLint attribute_coord2d;
 GLint uniform_randtexture;
 GLint uniform_m;
 GLint uniform_v;
+GLint uniform_p;
 GLint uniform_mvp;
+GLint uniform_mvp_sky;
 GLint uniform_camerapos;
 GLint uniform_line_flag;
 GLint uniform_sky_flag;
+GLint uniform_scale;
 
 GLuint texture_id;
 
 bool rotate = false;
 
-float camera_x = 5.750006;
-float camera_y = -2.349980;
-float camera_z = 4.899995;
-float lookat_x = MESH_SCALE/2.0;
-float lookat_y = MESH_SCALE/2.0;
-float lookat_z = 2.0;
+#define DEBUG_CAMERA true
+float camera_x = -0.299998;
+float camera_y = 1.749997;
+float camera_z = 2.300000;
+float lookat_x = 1.550001;
+float lookat_y = 3.000000;
+float lookat_z = 1.800000;
+/*float camera_x = MESH_SCALE;
+float camera_y = -MESH_SCALE;
+float camera_z = 3.649999;
+float lookat_x = MESH_SCALE;
+float lookat_y = MESH_SCALE;
+float lookat_z = 3.249999;*/
 #define CAMERA_STEP 0.05
 #define LOOK_STEP 0.05
 
@@ -91,11 +110,14 @@ int init_resources(void) {
 	attribute_coord2d = get_attrib(program, "coord2d");
 	uniform_m = get_uniform(program, "m");
 	uniform_v = get_uniform(program, "v");
+	uniform_p = get_uniform(program, "p");
 	uniform_mvp = get_uniform(program, "mvp");
+	uniform_mvp_sky = get_uniform(program, "mvp_sky");
 	uniform_line_flag = get_uniform(program, "line_flag");
 	uniform_sky_flag = get_uniform(program, "sky_flag");
 	uniform_camerapos = get_uniform(program, "camerapos");
 	uniform_randtexture = get_uniform(program, "randtexture");
+	uniform_scale = get_uniform(program, "scale");
 	
 	// Generate random texture
 	#define N 256
@@ -141,10 +163,8 @@ int init_resources(void) {
 	}
 	
 	// Sky mesh generation
-	#define N_SKY 200
-	#define N_SKY_CELLS (N_SKY-1)
 	glm::vec2* skyVertices = new glm::vec2[N_SKY*N_SKY];
-	generateVerticesMesh(skyVertices, N_SKY, 1, STRATEGY_Q1);
+	generateVerticesMesh(skyVertices, N_SKY, N_SKY_SCALE, STRATEGY_CENTER);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo_sky[0]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * N_SKY*N_SKY, skyVertices, GL_STATIC_DRAW);
 	
@@ -168,6 +188,7 @@ void render(GLFWwindow* window) {
 	
 	glUniform1i(uniform_randtexture, 0);
 	glUniform1i(uniform_line_flag, 0);
+	glUniform1i(uniform_scale, MESH_SCALE);
 	
 	glUniform3f(uniform_camerapos, camera_x, camera_y, camera_z);
 	glEnableVertexAttribArray(attribute_coord2d);
@@ -177,7 +198,7 @@ void render(GLFWwindow* window) {
 	glVertexAttribPointer(attribute_coord2d, 2, GL_FLOAT, GL_FALSE, 0, 0);
 	
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_sky_triangles_index[0]);
-	//glDrawElements(GL_TRIANGLES, N_SKY_CELLS * N_SKY_CELLS * 6, GL_UNSIGNED_SHORT, 0);
+	glDrawElements(GL_TRIANGLES, N_SKY_CELLS * N_SKY_CELLS * 6, GL_UNSIGNED_SHORT, 0);
 	
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_sky_lines_index[0]);
 	glDrawElements(GL_LINES, N_SKY_CELLS * N_SKY_CELLS * 10, GL_UNSIGNED_SHORT, 0);
@@ -226,11 +247,16 @@ void logic() {
 		model = glm::mat4(1.0f);
 	}
 	glm::mat4 view = glm::lookAt(glm::vec3(camera_x, camera_y, camera_z), glm::vec3(lookat_x, lookat_y, lookat_z), glm::vec3(0.0, 0.0, 1.0));
+	glm::mat4 view_sky = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.5f * MESH_SCALE), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0, 1.0, 0.0));
 	glm::mat4 projection = glm::perspective(45.0f, 1.0f * getMonitorWidth() / getMonitorHeight(), 0.01f, 500.0f);
 	glm::mat4 mvp = projection * view * model;
+	glm::mat4 mvp_sky = projection * view_sky * model;
+	
 	glUniformMatrix4fv(uniform_m, 1, GL_FALSE, glm::value_ptr(model));
 	glUniformMatrix4fv(uniform_v, 1, GL_FALSE, glm::value_ptr(view));
+	glUniformMatrix4fv(uniform_p, 1, GL_FALSE, glm::value_ptr(projection));
 	glUniformMatrix4fv(uniform_mvp, 1, GL_FALSE, glm::value_ptr(mvp));
+	glUniformMatrix4fv(uniform_mvp_sky, 1, GL_FALSE, glm::value_ptr(mvp_sky));
 	
 	/* Set texture wrapping mode */
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, false ? GL_CLAMP_TO_EDGE : GL_REPEAT);
@@ -260,7 +286,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 		switch (key) {
 			case GLFW_KEY_F3:
 				rotate = !rotate;
-				printf("Rotation is now %s\n", rotate ? "on" : "off");
+				gl_log("Rotation is now %s\n", rotate ? "on" : "off");
 				break;
 			case GLFW_KEY_UP:
 				camera_y += CAMERA_STEP;
@@ -299,7 +325,15 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 				lookat_y += -1.0 * LOOK_STEP;
 				break;
 		}
-		//gl_log("campos[%f, %f, %f], camlooat[%f, %f, %f,]", camera_x, camera_y, camera_z, lookat_x, lookat_y, lookat_z);
+		if (DEBUG_CAMERA) {
+			gl_log("#########################################\n");
+			gl_log("float camera_x = %f;\n", camera_x);
+			gl_log("float camera_y = %f;\n", camera_y);
+			gl_log("float camera_z = %f;\n", camera_z);
+			gl_log("float lookat_x = %f;\n", lookat_x);
+			gl_log("float lookat_y = %f;\n", lookat_y);
+			gl_log("float lookat_z = %f;\n", lookat_z);
+		}
 	}
 }
 

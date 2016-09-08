@@ -2,15 +2,18 @@ attribute vec2 coord2d;
 uniform sampler2D randtexture;
 uniform mat4 m;
 uniform mat4 v;
+uniform mat4 p;
 uniform mat4 mvp;
+uniform mat4 mvp_sky;
 uniform vec3 lightpos;
 uniform vec3 camerapos;
 uniform int sky_flag;
+uniform int scale;
 
 varying vec3 vpos_m;
 varying vec3 tex_color;
 
-float ts = 0.7; //terrain scale, q[2].w
+float ts = 200.0/256.0; //terrain scale, q[2].w
 vec3 campos = camerapos; // camera position q[4].xyz
 float waterplane = 0.0; // waterplane q[1].w
 float season = 0.0/256.0; // season param, q[2].x
@@ -89,6 +92,7 @@ vec3 b(vec3 p,vec3 c,vec3 d)
     }	
 	
 vec3 c(vec3 p) {
+	vec3 e = normalize(vec3(0,0,0) - (v * vec4(p, 1.0)).xyz);
     float t = length(p.xyz-campos);
 	vec3 n = cn(p.xy,.001*t,12-log2(t));
 	float h = f(3*p.xy,3);
@@ -100,12 +104,12 @@ vec3 c(vec3 p) {
 	// FOG
 	c *= exp(-.042*t);
 	// Light scattering
-	//c+=(1-exp(-.1*t))*(vec3(.52,.59,.65)+pow(saturate(mul(e,sundir)),8)*vec3(.6,.4,.1));
+	c+=(1-exp(-.1*t))*(vec3(.52,.59,.65)+pow(saturate(mul(e,sundir)),8)*vec3(.6,.4,.1));
 	
 	// tonemap
-	c *= pow(c,vec3(.45,.45,.45))*contrast+brightness;
+	//c *= pow(c,vec3(.45,.45,.45))*contrast+brightness;
     // color ink
-    c.xz*=.98;
+    //c.xz*=.98;
 	return c;
 }
 
@@ -123,15 +127,16 @@ void main(void) {
 	if(sky_flag==0) {
 		vpos_m = vec3(0.0,0.0,0.0);
 		vpos_m.xy = coord2d;
-		vpos_m.z = ts * f(vpos_m.xy, 8);
+		vpos_m.z = ts * f(vpos_m.xy, 6);
 		//vpos_m.z = 0.0;
 		// mvp * 
 		gl_Position = mvp * vec4(vpos_m, 1);
 		//tex_color = vec3(0.85,0.85,0.85);
 		tex_color = c(vpos_m);
 	} else {
-		gl_Position = vec4(coord2d - 1.0, -2.0, 1.0);
+		gl_Position = mvp_sky * vec4(coord2d, 0.0, 1.0);
 	    //gl_Position = mvp * vec4(coord2d.x, 15.0, coord2d.y, 1.0);
-	    tex_color = c_sky(vec3(coord2d.x, 15.0, coord2d.y));//vec3(0.85, 0.85, 1.0);
+	    tex_color = c_sky(vec3(coord2d.x, 15.0, coord2d.y));
+		//tex_color = vec3(0.412, 0.412, 0.412);
 	}
 }
